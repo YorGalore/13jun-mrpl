@@ -47,6 +47,24 @@ The chatbot supports cybersecurity question-answering, threat actor analysis, ma
 - Knowledge retrieval from RDF/SPARQL resources
 - Context-aware answer generation using LLMs
 
+## Documentation Details
+
+### System Overview
+The system consists of the following components:
+
+- **Frontend Interface**: User chatbot interface 
+- **Backend Service**: Handles query processing and LLM orchestration 
+- **Knowledge Retrieval Layer**:
+  - SPARQL queries to SEPSES CSKG
+  - RDF/Turtle graph traversal
+  - Vector database retrieval 
+- **LLM Layer**:
+  - Multiple LLMs
+  - Used for response generation and reasoning
+- **RAG / GraphRAG Pipeline**:
+  - Combines retrieved graph data + semantic search results
+  - Feeds structured context into LLM for final response
+
 ## Dataset & Knowledge Source
 Primary dataset:
 - SEPSES Cybersecurity Knowledge Graph (CSKG)
