@@ -38,11 +38,11 @@ def generate_sparql(question: str) -> str:
     return response.content.strip()
 
 
-def execute_nl_query(question: str):
+def execute_question(question: str):
     sparql_query = generate_sparql(question)
 
     result = run_query(sparql_query)
-
+    
     rows = bindings_to_rows(result)
 
     return {

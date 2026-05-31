@@ -123,17 +123,18 @@ def execute_question(question: str):
 
 # Demo
 if __name__ == "__main__":
-    
-    question = "Show information about CVE-2021-44228"
+    q = "Show vulnerabilities related to CVE-2021-44228"
 
     result = execute_question(q)
 
-    print("Method:", result["method"])
-    print()
+    print("QUESTION:")
+    print(result["question"])
 
+    print("\nSPARQL:")
     print(result["sparql"])
 
-    print()
+    print("\nRESULTS:")
+    for r in result["results"]:
+        print(r)
 
-    for row in result["results"]:
-        print(row)
+    execute_nl_query = execute_question

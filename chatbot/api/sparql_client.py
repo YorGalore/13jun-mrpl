@@ -44,6 +44,17 @@ def escape_sparql_literal(value: str) -> str:
 def normalize_iri(iri: str) -> str:
     return iri.strip().strip("<>").replace(">", "")
 
+def sparql_term(term: str) -> str:
+    term = term.strip()
+
+    if term.startswith("<") and term.endswith(">"):
+        return term
+
+    if term.startswith("http://") or term.startswith("https://"):
+        return f"<{normalize_iri(term)}>"
+
+    return term
+
 @dataclass(frozen=True)
 class SPARQLConfig:
     endpoint: str = DEFAULT_ENDPOINT

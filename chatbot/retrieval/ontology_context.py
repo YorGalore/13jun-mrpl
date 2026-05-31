@@ -2,16 +2,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 DEFAULT_SCHEMA_JSON = Path("docs/knowledge_graph_schema.json")
 
-"""
-Ontology context untuk NL2SPARQL.
-"""
-
-ONTOLOGY_CONTEXT = """
-
+FALLBACK_CONTEXT = """\
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX dct: <http://purl.org/dc/terms/>
@@ -31,7 +26,6 @@ KEY CLASSES:
 - vuln:Vulnerability
 - cpe:CPE
 - cvss:CVSS
-- rdfs:Resource
 
 KEY PROPERTIES:
 - cve:cveId
@@ -47,42 +41,10 @@ KEY PROPERTIES:
 - cwe:description
 - capec:capecId
 - capec:description
-- attack:technique
+- attack:targets
+- attack:uses
 - vuln:severity
 - vuln:relatedTo
-- attack:targets
-- attack:uses
-
-COMMON QUERY SHAPES:
-1. CVE lookup by ID
-   SELECT ?description WHERE {
-     ?cve cve:cveId "CVE-2021-44228" ;
-          cve:description ?description .
-   }
-
-2. CVE -> CWE relationship
-   SELECT ?cveId ?cwe WHERE {
-     ?cve cve:cveId ?cveId ;
-          cve:hasCWE ?cwe .
-   }
-
-3. CVE -> CPE affected product
-   SELECT ?cveId ?cpe WHERE {
-     ?cve cve:cveId ?cveId ;
-          cve:hasCPE ?cpe .
-   }
-
-4. CAPEC / attack pattern exploration
-   SELECT ?pattern ?label WHERE {
-     ?pattern a capec:AttackPattern ;
-              rdfs:label ?label .
-   }
-
-RELATIONSHIPS:
-- vuln:relatedTo
-- attack:targets
-- attack:uses
-- cve:hasWeakness
 """
 
 def _safe_read_json(path: Path) -> Optional[Dict[str, Any]]:
@@ -93,7 +55,7 @@ def _safe_read_json(path: Path) -> Optional[Dict[str, Any]]:
     except Exception:
         return None
 
-def _format_table(rows: List[Dict[str, Any]], columns: List[str], limit: int = 10) -> str:
+def _format_table(rows, columns, limit: int = 10) -> str:
     rows = rows[:limit]
     if not rows:
         return "_No data found._"
@@ -109,7 +71,7 @@ def build_ontology_context(schema_json_path: Path = DEFAULT_SCHEMA_JSON) -> str:
     if not data:
         return FALLBACK_CONTEXT.strip()
 
-    lines: List[str] = [
+    lines = [
         "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>",
         "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>",
         "PREFIX dct: <http://purl.org/dc/terms/>",
@@ -152,8 +114,11 @@ def build_ontology_context(schema_json_path: Path = DEFAULT_SCHEMA_JSON) -> str:
             "4. CVE -> CPE: ?cve cve:cveId ?cveId ; cve:hasCPE ?cpe .",
         ]
     )
-
+    
     return "\n".join(lines).strip()
 
 def ontology_summary() -> str:
-    return ONTOLOGY_CONTEXT.strip()
+    return build_ontology_context()
+
+# supaya file lama yang import ONTOLOGY_CONTEXT tetap jalan
+ONTOLOGY_CONTEXT = ontology_summary()

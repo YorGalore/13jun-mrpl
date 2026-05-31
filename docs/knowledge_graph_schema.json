@@ -1,0 +1,111 @@
+{
+  "endpoint_graph": "http://sepses.local",
+  "graph_count": 1,
+  "graphs": [
+    {
+      "graph": "http://sepses.local"
+    }
+  ],
+  "graphs_report": [
+    {
+      "graph_uri": "http://sepses.local",
+      "triple_count": [
+        {
+          "triple_count": "0"
+        }
+      ],
+      "entity_count": [
+        {
+          "subjects": "0",
+          "objects": "0"
+        }
+      ],
+      "top_classes": [],
+      "top_predicates": [],
+      "sample_triples": [],
+      "label_hits": [],
+      "entity_neighborhood": [],
+      "curated_classes": [
+        {
+          "class": "cve:CVE",
+          "label": "CVE",
+          "count": "0",
+          "samples": ""
+        },
+        {
+          "class": "cwe:CWE",
+          "label": "CWE",
+          "count": "0",
+          "samples": ""
+        },
+        {
+          "class": "capec:AttackPattern",
+          "label": "CAPEC Attack Pattern",
+          "count": "0",
+          "samples": ""
+        },
+        {
+          "class": "attack:Technique",
+          "label": "ATT&CK Technique",
+          "count": "0",
+          "samples": ""
+        },
+        {
+          "class": "vuln:Vulnerability",
+          "label": "Vulnerability",
+          "count": "0",
+          "samples": ""
+        },
+        {
+          "class": "cpe:CPE",
+          "label": "CPE",
+          "count": "0",
+          "samples": ""
+        },
+        {
+          "class": "cvss:CVSS",
+          "label": "CVSS",
+          "count": "0",
+          "samples": ""
+        }
+      ],
+      "curated_relations": [
+        {
+          "predicate": "cve:hasCWE",
+          "label": "CVE → CWE",
+          "count": "0"
+        },
+        {
+          "predicate": "cve:hasCAPEC",
+          "label": "CVE → CAPEC",
+          "count": "0"
+        },
+        {
+          "predicate": "cve:hasCPE",
+          "label": "CVE → CPE",
+          "count": "0"
+        },
+        {
+          "predicate": "cve:hasCVSS",
+          "label": "CVE → CVSS",
+          "count": "0"
+        },
+        {
+          "predicate": "vuln:relatedTo",
+          "label": "Vulnerability → Related",
+          "count": "0"
+        },
+        {
+          "predicate": "attack:targets",
+          "label": "ATT&CK → Targets",
+          "count": "0"
+        },
+        {
+          "predicate": "attack:uses",
+          "label": "ATT&CK → Uses",
+          "count": "0"
+        }
+      ]
+    }
+  ]
+}
