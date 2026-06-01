@@ -99,15 +99,15 @@ export function ChatInput({
   };
 
   return (
-    <div className="px-6 pb-6 pt-4 bg-[#0B1220]">
+    <div className="px-6 pb-6 pt-4 bg-[#F6F3EB]">
       {/* Container */}
 
-      <div className="bg-[#111827] rounded-[28px] shadow-[0_10px_40px_rgba(0,0,0,0.35)] overflow-hidden">
+      <div className="bg-[#FFFDF6] rounded-[28px] shadow-[0_10px_40px_rgba(0,0,0,0.35)] overflow-hidden">
         {/* Top */}
 
         <div className="px-5 pt-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-slate-400">
-            <Sparkles className="w-4 h-4 text-violet-400" />
+          <div className="flex items-center gap-2 text-[#495A43]">
+            <Sparkles className="w-4 h-4 text-[#495A43]" />
 
             <span className="text-xs font-medium">
               {
@@ -148,7 +148,7 @@ export function ChatInput({
             }
             className={cn(
               "w-full bg-transparent resize-none outline-none",
-              "text-sm text-slate-200",
+              "text-sm text-black/80",
               "placeholder:text-slate-500",
               "min-h-[24px] max-h-[160px]",
               "disabled:opacity-50"
@@ -175,7 +175,7 @@ export function ChatInput({
 
               value.trim() &&
                 !isLoading
-                ? "bg-violet-600 hover:bg-violet-500 text-white shadow-lg"
+                ? "bg-[#495A43] hover:bg-[#2F4128] text-white shadow-lg cursor-pointer"
                 : "bg-white/5 text-slate-600 cursor-not-allowed"
             )}
           >

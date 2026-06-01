@@ -37,17 +37,17 @@ export function SessionItem({
     switch (session.mode) {
       case "threat_intelligence":
         return (
-          <ShieldAlert className="w-3.5 h-3.5 text-violet-400" />
+          <ShieldAlert className="w-3.5 h-3.5 text-[#495A43]" />
         );
 
       case "log_analysis":
         return (
-          <FileSearch className="w-3.5 h-3.5 text-sky-400" />
+          <FileSearch className="w-3.5 h-3.5 text-[#495A43]" />
         );
 
       default:
         return (
-          <Layers3 className="w-3.5 h-3.5 text-emerald-400" />
+          <Layers3 className="w-3.5 h-3.5 text-[#495A43]" />
         );
     }
   };
@@ -58,17 +58,17 @@ export function SessionItem({
         setActiveSession(session.id)
       }
       className={cn(
-        "group cursor-pointer rounded-2xl p-4 transition-all",
+        "group cursor-pointer rounded-xl p-4 transition-all",
         isActive
-          ? "bg-[#111827] shadow-lg"
-          : "hover:bg-white/5"
+          ? "bg-[#F6F3EB] shadow-lg"
+          : "bg-[#E4E5CA] hover:bg-[#E4E5CA]"
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           {getModeIcon()}
 
-          <h4 className="text-sm text-white truncate">
+          <h4 className="text-sm text-black truncate">
             {truncateText(
               session.title || "New Investigation",
               36
@@ -81,18 +81,18 @@ export function SessionItem({
             e.stopPropagation();
             deleteSession(session.id);
           }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-red-400"
+          className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-red-900 cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
 
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-[11px] text-slate-500">
+        <span className="text-[11px] text-black/80 tracking-[0.1em]">
           {getModeLabel(session.mode)}
         </span>
 
-        <span className="text-[11px] text-slate-600">
+        <span className="text-[11px] text-black/80">
           {formatDistanceToNow(
             new Date(session.createdAt),
             { addSuffix: true }
@@ -101,7 +101,7 @@ export function SessionItem({
       </div>
 
       {session.messages.length > 0 && (
-        <p className="mt-2 text-xs text-slate-500 line-clamp-2">
+        <p className="mt-2 text-xs text-black/60 line-clamp-2">
           {
             session.messages[
               session.messages.length - 1

@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Inter } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "ThreatGraph AI",
   description:
     "Knowledge Graph Powered Security Copilot for Threat Intelligence and Security Log Analysis",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
+});
 
 export default function RootLayout({
   children,
@@ -13,6 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    
     <html lang="en">
       <head>
         <link
@@ -25,14 +36,9 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
-
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
       </head>
 
-      <body className="antialiased bg-[#0B1220] text-white">
+      <body className={`${inter.className} antialiased bg-[#F6F3EB] text-[#1F2937]`}>
         {children}
       </body>
     </html>

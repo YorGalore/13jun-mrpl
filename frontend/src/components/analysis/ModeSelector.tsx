@@ -51,8 +51,8 @@ export function ModeSelector() {
             "flex items-center gap-2 px-4 py-2 rounded-2xl text-sm transition-all",
 
             currentMode === item.mode
-              ? "bg-violet-600 text-white shadow-lg"
-              : "bg-white/5 hover:bg-white/10 text-slate-400"
+              ? "bg-[#2F4128] border border-[#495A43] text-white shadow-lg"
+              : "bg-[#495A43]/30 border border-[#495A43] hover:bg-[#2F4128]/80 text-[#2F4128] hover:text-white cursor-pointer"
           )}
         >
           {item.icon}

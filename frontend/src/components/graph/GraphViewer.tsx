@@ -48,7 +48,7 @@ export function GraphViewer() {
 
             <div>
               <h3 className="text-white font-semibold">
-                Knowledge Graph Explorer
+                Analysis Dashboard
               </h3>
 
               <p className="text-xs text-slate-500">

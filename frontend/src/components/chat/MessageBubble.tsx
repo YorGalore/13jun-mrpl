@@ -53,8 +53,8 @@ export function MessageBubble({
           className={cn(
             "w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0",
             isUser
-              ? "bg-violet-600"
-              : "bg-gradient-to-br from-violet-500 to-sky-500"
+              ? "bg-[#495A43]"
+              : "bg-gradient-to-br from-[#495A43] to-[#869B7E] shadow-lg"
           )}
         >
           {isUser ? (
@@ -76,10 +76,10 @@ export function MessageBubble({
 
           <div
             className={cn(
-              "rounded-3xl px-5 py-4 text-sm leading-7",
+              "rounded-3xl px-4 py-2 text-sm leading-7",
               isUser
-                ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg rounded-tr-md"
-                : "bg-[#111827] text-slate-200 shadow-[0_8px_24px_rgba(0,0,0,0.25)] rounded-tl-md"
+                ? "bg-gradient-to-r from-[#495A43] to-[#7A9370] text-white shadow-lg rounded-tr-md"
+                : "bg-[#495A43] pb-0 text-slate-200 shadow-[0_8px_24px_rgba(0,0,0,0.25)] rounded-tl-md"
             )}
           >
             {isUser ? (
@@ -97,15 +97,15 @@ export function MessageBubble({
 
           {/* Meta */}
 
-          <div className="flex flex-wrap items-center gap-3 mt-2 px-2 opacity-70">
-            <span className="text-[11px] text-slate-500">
+          <div className="flex flex-wrap items-center gap-3 mt-2 px-2">
+            <span className="text-[11px] text-black/60">
               {formatTimestamp(
                 message.timestamp
               )}
             </span>
 
             {message.llmUsed && (
-              <span className="flex items-center gap-1 text-[11px] text-slate-500">
+              <span className="flex items-center gap-1 text-[11px] text-black/60">
                 <Cpu className="w-3 h-3" />
                 {message.llmUsed}
               </span>
@@ -113,7 +113,7 @@ export function MessageBubble({
 
             {message.mode &&
               !isUser && (
-                <span className="text-[11px] text-slate-500">
+                <span className="text-[11px] text-black/60">
                   {getModeLabel(
                     message.mode
                   )}
@@ -123,7 +123,7 @@ export function MessageBubble({
             {message.sources &&
               message.sources.length >
                 0 && (
-                <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                <span className="flex items-center gap-1 text-[11px] text-black/60">
                   <BookOpen className="w-3 h-3" />
                   {message.sources.join(
                     ", "
@@ -140,7 +140,7 @@ export function MessageBubble({
                       message
                     )
                   }
-                  className="flex items-center gap-1 bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 px-2 py-1 rounded-full text-[11px] transition-all"
+                  className="flex items-center gap-1 bg-[#495A43]/20 hover:bg-[#495A43]/40 text-[#495A43] px-2 py-1 rounded-full text-[11px] transition-all"
                 >
                   <Network className="w-3 h-3" />
 
