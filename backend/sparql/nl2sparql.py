@@ -1,7 +1,7 @@
 from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Tuple
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 from backend.config import SPARQL_PUBLIC_ENDPOINT, SPARQL_TIMEOUT
 from backend.llm.llm_models import LLMProvider, DEFAULT_MODEL
@@ -160,8 +160,12 @@ def generate_sparql(question: str, model: str = DEFAULT_MODEL) -> Tuple[str, str
     )
 
 def run_kg_query(query: str) -> List[Dict[str, str]]:
-    """Eksekusi pada endpoint publik (satu-satunya endpoint sekarang)."""
-    client = VirtuosoClient(SPARQLConfig(timeout=SPARQL_TIMEOUT))
+    """Eksekusi pada endpoint publik (jalur utama).
+    SPARQLConfig sekarang public-safe (default_graph=None, infer=False) sehingga
+    query tidak lagi dipaksa ke graph kosong. Bila publik gagal, client otomatis
+    mencoba Virtuoso lokal (lihat backend/sparql/client.run_query)."""
+
+    client = VirtuosoClient(SPARQLConfig(endpoint=SPARQL_PUBLIC_ENDPOINT, timeout=SPARQL_TIMEOUT))
     return bindings_to_rows(client.run_query(query))
 
 

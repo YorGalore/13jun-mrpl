@@ -6,8 +6,9 @@ from typing import Any, Dict, Iterable, Optional, List
 
 from SPARQLWrapper import SPARQLWrapper, JSON, POST
 from backend.config import(
-    SPARQL_PUBLIC_ENDPOINT as DEFAULT_ENDPOINT,
-    DEFAULT_GRAPH, SPARQL_TIMEOUT as DEFAULT_TIMEOUT
+    SPARQL_PUBLIC_ENDPOINT as DEFAULT_ENDPOINT, DEFAULT_GRAPH,
+    SPARQL_TIMEOUT as DEFAULT_TIMEOUT,
+    SPARQL_LOCAL_ENDPOINT, LOCAL_GRAPH, ENABLE_LOCAL_FALLBACK
 )
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -46,7 +47,8 @@ def normalize_iri(iri: str) -> str:
 class SPARQLConfig:
     endpoint: str = DEFAULT_ENDPOINT
     timeout: int = DEFAULT_TIMEOUT
-    default_graph: str = DEFAULT_GRAPH
+    default_graph: Optional[str] = None
+    # infer=False: parameter "infer" khas Virtuoso;
     infer: bool = True
 
 class VirtuosoClient:
@@ -54,12 +56,27 @@ class VirtuosoClient:
     def __init__(self, config: Optional[SPARQLConfig] = None):
         self.config = config or SPARQLConfig()
 
-    def _new_wrapper(self) -> SPARQLWrapper:
-        wrapper = SPARQLWrapper(self.config.endpoint)
+    def _new_wrapper(self, endpoint) -> SPARQLWrapper:
+        wrapper = SPARQLWrapper(endpoint)
         wrapper.setReturnFormat(JSON)
         wrapper.setMethod(POST)
         wrapper.setTimeout(self.config.timeout)
         return wrapper
+    
+    def _execute(
+        self,
+        endpoint: str,
+        query_text: str,
+        target_graph: Optional[str],
+        infer: bool,
+    ) -> Dict[str, Any]:
+        wrapper = self._new_wrapper(endpoint)
+        if target_graph and target_graph.strip():
+            wrapper.addDefaultGraph(target_graph.strip())
+        if infer:
+            wrapper.addParameter("infer", "true")
+        wrapper.setQuery(query_text)
+        return wrapper.query().convert()
 
     def run_query(
         self,
@@ -69,20 +86,30 @@ class VirtuosoClient:
         infer: Optional[bool] = None,
     ) -> Dict[str, Any]:
         
-        wrapper = self._new_wrapper()
-        target_graph = default_graph or self.config.default_graph
-        if target_graph and target_graph.strip():
-            wrapper.addDefaultGraph(target_graph.strip())
+        target_graph = default_graph if default_graph is not None else self.config.default_graph
         if infer is None:
             infer = self.config.infer
-        if infer:
-            wrapper.addParameter("infer", "true")
-
-        wrapper.setQuery(query_text)
 
         try:
-            return wrapper.query().convert()
+            return self._execute(self.config.endpoint, query_text, target_graph, infer)
         except Exception as exc:  # pragma: no cover - endpoint/network failures
+            # Coba jalur cadangan: Virtuoso lokal.
+            use_fallback = (
+                ENABLE_LOCAL_FALLBACK
+                and self.config.endpoint == DEFAULT_ENDPOINT
+                and SPARQL_LOCAL_ENDPOINT
+                and SPARQL_LOCAL_ENDPOINT != self.config.endpoint
+            )
+            if use_fallback:
+                try:
+                    # Di Virtuoso lokal semua dump dimuat ke LOCAL_GRAPH.
+                    return self._execute(
+                        SPARQL_LOCAL_ENDPOINT, query_text, LOCAL_GRAPH, infer=False
+                    )
+                except Exception as exc2:
+                    raise SPARQLClientError(
+                        f"SPARQL gagal di publik ({exc}) dan lokal ({exc2})."
+                    ) from exc2
             raise SPARQLClientError(f"SPARQL query failed: {exc}") from exc
 
 _client = VirtuosoClient()

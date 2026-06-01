@@ -34,7 +34,7 @@ KEY CLASSES:
 KEY PROPERTIES:
 - cve:id (string id, mis. "CVE-2021-44228"), cve:description, cve:publishedDate, cve:hasCWE, cve:hasCPE
 - cve:hasCAPEC, cve:hasCVSS, cve:hasCVSS2BaseMetric, cve:hasCVSS3BaseMetric  
-- cvss:baseScore, cvss:confidentialityImpact, cvss:attackVecktor
+- cvss:baseScore, cvss:confidentialityImpact, cvss:attackVector
 - cwe:name, cwe:description, cwe:hasCAPEC, cwe:hasCommonConsequence
 - capec:name, capec:description, capec:mitigation
 - attack:targets, attack:uses
@@ -79,12 +79,9 @@ def build_ontology_context(schema_json_path: Path = DEFAULT_SCHEMA_JSON) -> str:
     if not data:
         return FALLBACK_CONTEXT.strip()
     
-    graphs_report: List[Dict[str, Any]] = data.get("graphs_report", []) or []
+    graphs_report: list = data.get("graphs_report", []) or []
     if not graphs_report:
         return FALLBACK_CONTEXT.strip()
-
-    lines = [FALLBACK_CONTEXT.strip(), "", "DISCOVERED GRAPH SUMMARY:",
-             f"- Graph count: {data.get('graph_count', 'n/a')}", ""]
 
     first_graph = graphs_report[0]
     lines = [

@@ -4,6 +4,7 @@ export type AnalysisMode =
   | "combined";
 
 export type MessageRole = "user" | "assistant" | "system";
+export type LLMModel = "gpt-4o-mini" | "deepseek-chat";
 
 export interface RDFTriple {
   subject: string;
@@ -40,6 +41,8 @@ export interface Message {
   graphData?: GraphData;       // For graph viewer
   llmUsed?: string;            // Which LLM answered
   sources?: string[];          // Source URLs/references
+  method?: "regex" | "llm" | "fallback";
+  sparql?: string;
 }
 
 export interface ChatSession {
@@ -56,6 +59,7 @@ export interface ChatRequest {
   mode: AnalysisMode;
   sessionId: string;
   history: { role: MessageRole; content: string }[];
+  model?: LLMModel;
 }
 
 export interface ChatResponse {
@@ -64,4 +68,6 @@ export interface ChatResponse {
   graphData?: GraphData;
   llmUsed?: string;
   sources?: string[];
+  method?: "regex" | "llm" | "fallback";
+  sparql?: string;
 }
