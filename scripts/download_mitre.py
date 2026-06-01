@@ -10,8 +10,7 @@ OUT.parent.mkdir(parents=True, exist_ok=True)
 
 print("Downloading MITRE ATT&CK data... (mungkin 1-2 menit)")
 response = requests.get(URL, verify=False)
+response.raise_for_status()
 
-with open("enterprise-attack.json", "w", encoding="utf-8") as f:
-    f.write(response.text)
-
-print("Selesai! File enterprise-attack.json sudah tersimpan.")
+OUT.write_text(response.text, encoding="utf-8")
+print(f"Selesai! File enterprise-attack.json sudah tersimpan di: {OUT}")

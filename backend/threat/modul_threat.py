@@ -1,20 +1,31 @@
 #Ditambah 
+from __future__ import annotations
+from functools import lru_cache
 from pathlib import Path
 from mitreattack.stix20 import MitreAttackData
 
-mitre = MitreAttackData("enterprise-attack.json")
-_mitre = None
+_ROOT = Path(__file__).resolve().parents[2]
+# Urutan pencarian dataset: lokasi standar (data/) dulu, lalu yang ikut ter-commit (modul_a3/).
+_CANDIDATE_PATHS = [
+    _ROOT / "data" / "enterprise-attack.json",
+    _ROOT / "modul_a3" / "enterprise-attack.json",
+]
 
+def _resolve_dataset_path() -> Path:
+    for path in _CANDIDATE_PATHS:
+        if path.exists():
+            return path
+    raise FileNotFoundError(
+        "enterprise-attack.json tidak ditemukan di "
+        f"{[str(p) for p in _CANDIDATE_PATHS]}. "
+        "Jalankan: python scripts/download_mitre.py"
+    )
+
+@lru_cache(maxsize=1)
 #ditambah
 def _get_mitre() -> MitreAttackData:
-    global _mitre
-    if _mitre is None:
-        if not MITRE_PATH.exists():
-            raise FileNotFoundError(
-                f"{MITRE_PATH} tidak ada. Jalankan: python scripts/download_mitre.py"
-            )
-        _mitre = MitreAttackData(str(MITRE_PATH))
-    return _mitre
+    """Load + cache dataset MITRE sekali saja per proses."""
+    return MitreAttackData(str(_resolve_dataset_path()))
 
 def get_threat_context(actor_keyword: str) -> str:
     try:

@@ -1,9 +1,14 @@
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
+from __future__ import annotations
 
-from modul_vulnerability import get_vuln_context
-from modul_threat import get_threat_context, get_malware_context
-from modul_logs import search_logs
+import re
+from typing import Dict
+
+from backend.logs.vector_store import search_logs
+from backend.pipeline.orchestrator import (LOG_KEYWORDS, MALWARE_KEYWORDS, SYSTEM_PROMPT, THREAT_KEYWORDS)
+from backend.threat.modul_threat import get_malware_context, get_threat_context
+from backend.threat.modul_vulnerability import get_vuln_context
+
+CVE_RE = re.compile(r"CVE-\d{4}-\d+", re.IGNORECASE)
 
 # System prompt untuk LLM
 SYSTEM_PROMPT = """Kamu adalah analis keamanan siber yang ahli.
@@ -12,60 +17,37 @@ Jangan mengarang informasi di luar konteks.
 Berikan jawaban yang jelas, terstruktur, dan actionable.
 Jika data tidak tersedia, katakan dengan jujur."""
 
-def build_prompt(user_question: str) -> dict:
-    """
-    Deteksi jenis pertanyaan dan ambil konteks yang relevan,
-    lalu bangun prompt siap kirim ke LLM.
-    """
-    question_lower = user_question.lower()
+def build_prompt(user_question: str) -> Dict[str, str]:
+    """Deteksi jenis pertanyaan, ambil konteks relevan, bangun prompt siap kirim."""
+    q = user_question.lower()
     context = ""
 
-    # Deteksi CVE
-    import re
-    cve_match = re.search(r'cve-\d{4}-\d+', question_lower)
+    cve_match = CVE_RE.search(user_question)
     if cve_match:
-        cve_id = cve_match.group().upper()
-        context += get_vuln_context(cve_id)
+        context += get_vuln_context(cve_match.group().upper())
 
-    # Deteksi threat actor
-    threat_keywords = ["apt", "lazarus", "fancy bear", "cozy bear", "kimsuky",
-                       "sandworm", "carbanak", "fin7", "turla"]
-    for kw in threat_keywords:
-        if kw in question_lower:
+    for kw in THREAT_KEYWORDS:
+        if kw in q:
             context += get_threat_context(kw)
             break
 
-    # Deteksi malware
-    malware_keywords = ["wannacry", "emotet", "mirai", "stuxnet", "notpetya",
-                        "ransomware", "trojan", "rootkit", "cobalt strike"]
-    for kw in malware_keywords:
-        if kw in question_lower:
+    for kw in MALWARE_KEYWORDS:
+        if kw in q:
             context += get_malware_context(kw)
             break
 
-    # Deteksi log analysis
-    log_keywords = ["log", "ssh", "login", "failed", "connection", "brute",
-                    "intrusion", "anomali", "mencurigakan"]
-    for kw in log_keywords:
-        if kw in question_lower:
+    for kw in LOG_KEYWORDS:
+        if kw in q:
             context += search_logs(user_question)
             break
 
-    # Bangun prompt final
     if context:
-        user_message = f"""Konteks data keamanan:
-{context}
-
-Pertanyaan: {user_question}"""
+        user_message = f"Konteks data keamanan:\n{context}\n\nPertanyaan: {user_question}"
     else:
-        user_message = f"""Pertanyaan: {user_question}
-(Tidak ada data spesifik ditemukan di knowledge graph untuk pertanyaan ini.)"""
+        user_message = (f"Pertanyaan: {user_question}\n"
+                        "(Tidak ada data spesifik ditemukan di knowledge graph untuk pertanyaan ini.)")
 
-    return {
-        "system": SYSTEM_PROMPT,
-        "user": user_message
-    }
-
+    return {"system": SYSTEM_PROMPT, "user": user_message}
 
 # Test
 if __name__ == "__main__":

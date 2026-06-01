@@ -28,7 +28,6 @@ KEY CLASSES:
 - cvss:CVSS
 
 KEY PROPERTIES:
-- cve:cveId
 - cve:id
 - cve:description
 - cve:publishedDate

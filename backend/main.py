@@ -42,6 +42,8 @@ class ChatResponse(BaseModel):
     triples: List[RDFTriple] = []
     llmUsed: Optional[str] = None
     sources: List[str] = []
+    method: Optional[str] = None      # regex | llm | None  (explainability)
+    sparql: Optional[str] = None      # query SPARQL yang dipakai (jika ada)
 
 
 @app.get("/")
@@ -56,4 +58,4 @@ def health() -> Dict[str, str]:
 
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> Dict[str, Any]:
-    return answer(req.message, mode=req.mode, model=req.model or DEFAULT_MODEL)
+    return answer(req.message, mode=req.mode, model=req.model or DEFAULT_MODEL,history=[h.model_dump() for h in req.history],)
