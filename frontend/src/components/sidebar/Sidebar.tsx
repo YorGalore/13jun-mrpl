@@ -39,14 +39,14 @@ export function Sidebar({
 
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-[#2F4128] text-lg">
+            <h2 className="font-semibold text-[#1F2B1A] text-lg">
               ThreatGraph AI
             </h2>
 
             <Sparkles className="w-4 h-4 text-[#495A43]" />
           </div>
 
-          <p className="text-xs text-[#495A43]">
+          <p className="text-xs text-black/60">
             Knowledge Graph Powered Security Assistant
           </p>
         </div>

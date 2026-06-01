@@ -19,7 +19,7 @@ export function TriplesList({
 }: Props) {
   if (!triples.length) {
     return (
-      <div className="p-6 text-center text-sm text-slate-500">
+      <div className="p-6 text-center text-sm text-black/60">
         No triples available
       </div>
     );
@@ -32,7 +32,7 @@ export function TriplesList({
           (triple, index) => (
             <div
               key={index}
-              className="bg-[#111827] rounded-2xl p-3"
+              className="bg-[#495A43] rounded-2xl p-3"
             >
               <div className="text-xs text-violet-400 font-medium">
                 {shorten(
@@ -40,7 +40,7 @@ export function TriplesList({
                 )}
               </div>
 
-              <div className="text-[11px] text-slate-500 my-1">
+              <div className="text-[11px] text-black/60 my-1">
                 {shorten(
                   triple.predicate
                 )}

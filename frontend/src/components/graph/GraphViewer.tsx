@@ -36,22 +36,22 @@ export function GraphViewer() {
     triplesToGraphData(triples);
 
   return (
-    <div className="flex flex-col h-full bg-[#0F172A] border-l border-white/5">
+    <div className="flex flex-col overflow-y-auto h-full bg-[#F6F3EB] border-l border-[#C9CAAC]">
       {/* Header */}
 
-      <div className="px-5 py-5 border-b border-white/5">
+      <div className="px-5 py-3.5 border-b border-[#C9CAAC] bg-[#E4E5CA]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-violet-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-r from-[#2F4128] to-[#7A9370] flex items-center justify-center">
               <Network className="w-5 h-5 text-white" />
             </div>
 
             <div>
-              <h3 className="text-white font-semibold">
+              <h3 className="text-[#1F2B1A] font-semibold">
                 Analysis Dashboard
               </h3>
 
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-black/60">
                 Explainability View
               </p>
             </div>
@@ -61,9 +61,9 @@ export function GraphViewer() {
             onClick={() =>
               toggleGraphViewer()
             }
-            className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all"
+            className="w-9 h-9 rounded-xl bg-[#C9CAAC] hover:bg-red-900/50 cursor-pointer flex items-center justify-center transition-all"
           >
-            <X className="w-4 h-4 text-slate-400" />
+            <X className="w-4 h-4 text-black/60" />
           </button>
         </div>
       </div>
@@ -71,11 +71,11 @@ export function GraphViewer() {
       {/* Stats */}
 
       <div className="grid grid-cols-2 gap-3 p-4">
-        <div className="bg-[#111827] rounded-2xl p-4">
-          <div className="flex items-center gap-2 text-slate-500">
+        <div className="bg-[#495A43] rounded-2xl p-4">
+          <div className="flex items-center gap-2 text-white">
             <Database className="w-4 h-4" />
 
-            <span className="text-xs">
+            <span className="text-xs text-white">
               Nodes
             </span>
           </div>
@@ -87,11 +87,11 @@ export function GraphViewer() {
           </p>
         </div>
 
-        <div className="bg-[#111827] rounded-2xl p-4">
-          <div className="flex items-center gap-2 text-slate-500">
+        <div className="bg-[#495A43] rounded-2xl p-4">
+          <div className="flex items-center gap-2 text-white">
             <Link2 className="w-4 h-4" />
 
-            <span className="text-xs">
+            <span className="text-xs text-white">
               Relations
             </span>
           </div>
@@ -107,7 +107,7 @@ export function GraphViewer() {
       {/* Graph */}
 
       <div className="px-4">
-        <div className="bg-[#111827] rounded-3xl p-4 h-[320px]">
+        <div className="bg-[#495A43]/50 rounded-3xl p-4 h-[320px]">
           <SimpleGraphViz
             nodes={
               graphData.nodes
@@ -122,7 +122,7 @@ export function GraphViewer() {
       {/* Entity Types */}
 
       <div className="px-4 pt-4">
-        <h4 className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-3">
+        <h4 className="text-xs uppercase tracking-[0.2em] text-black/60 mb-3">
           Entity Types
         </h4>
 
@@ -137,7 +137,7 @@ export function GraphViewer() {
           ].map((type) => (
             <div
               key={type}
-              className="flex items-center gap-2 bg-[#111827] px-3 py-2 rounded-xl"
+              className="flex items-center gap-2 bg-[#495A43] px-3 py-2 rounded-xl"
             >
               <div
                 className="w-2 h-2 rounded-full"
@@ -149,7 +149,7 @@ export function GraphViewer() {
                 }}
               />
 
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-white">
                 {type}
               </span>
             </div>
@@ -159,9 +159,9 @@ export function GraphViewer() {
 
       {/* Triples */}
 
-      <div className="flex-1 mt-4 overflow-hidden">
+      <div className="flex-1 mt-4">
         <div className="px-4 pb-2">
-          <h4 className="text-xs uppercase tracking-[0.2em] text-slate-500">
+          <h4 className="text-xs uppercase tracking-[0.2em] text-black/60">
             Retrieved Triples
           </h4>
         </div>
@@ -193,7 +193,7 @@ function SimpleGraphViz({
 }) {
   if (!nodes.length) {
     return (
-      <div className="w-full h-full flex items-center justify-center text-slate-500">
+      <div className="w-full h-full flex items-center justify-center text-black/60">
         No graph available
       </div>
     );
