@@ -1,5 +1,5 @@
 import sys
-from backend.sparql.schema_inspector import main
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:

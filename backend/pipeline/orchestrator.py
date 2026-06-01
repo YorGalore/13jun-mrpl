@@ -157,7 +157,7 @@ def answer(
 
     try:
         llm = LLMProvider.get_model(model)
-        messages = [SystemMessage(content=SYSTEM_PROMPT)]
+        messages = [SystemMessage(content=system_prompt_for(mode))]
         messages.extend(_history_messages(history))
         messages.append(HumanMessage(content=user_msg))
         resp = llm.invoke(messages)

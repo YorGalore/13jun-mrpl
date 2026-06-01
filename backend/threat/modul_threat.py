@@ -30,6 +30,7 @@ def get_threat_context(actor_keyword: str) -> str:
     try:
         mitre = _get_mitre()  
         groups = mitre.get_groups()
+        hasil = []
         for group in groups:
             name = group.get("name", "")
             aliases = group.get("aliases", [])

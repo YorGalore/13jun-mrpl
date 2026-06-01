@@ -1,12 +1,12 @@
 from __future__ import annotations
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from langchain.prompts import PromptTemplate
 
 from backend.config import SPARQL_PUBLIC_ENDPOINT, SPARQL_TIMEOUT
 from backend.llm.llm_models import LLMProvider, DEFAULT_MODEL
 from backend.patterns import CVE_RE
-from backend.sparql.client import SPARQLConfig, VirtuosoClient, bindings_to_rows
+from backend.sparql.client import PREFIXES, SPARQLConfig, VirtuosoClient, bindings_to_rows
 from backend.sparql.ontology_context import (ONTOLOGY_CONTEXT)
 
 # Operasi tulis yang dilarang (read-only guard).

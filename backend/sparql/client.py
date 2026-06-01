@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable, Optional, List
 
 from SPARQLWrapper import SPARQLWrapper, JSON, POST
 from backend.config import(
-    SPARQL_ENDPOINT as DEFAULT_ENDPOINT,
+    SPARQL_PUBLIC_ENDPOINT as DEFAULT_ENDPOINT,
     DEFAULT_GRAPH, SPARQL_TIMEOUT as DEFAULT_TIMEOUT
 )
 ssl._create_default_https_context = ssl._create_unverified_context

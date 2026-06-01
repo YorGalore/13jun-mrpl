@@ -3,7 +3,7 @@ from typing import Dict
 
 from backend.logs.vector_store import search_logs
 from backend.patterns import (LOG_KEYWORDS, MALWARE_KEYWORDS, SYSTEM_PROMPT, THREAT_KEYWORDS)
-from backend.pipeline.orchestrator import SYSTEM_PROMPT
+from backend.pipeline.prompts import system_prompt_for
 from backend.threat.modul_threat import get_malware_context, get_threat_context
 from backend.threat.modul_vulnerability import get_vuln_context
 
