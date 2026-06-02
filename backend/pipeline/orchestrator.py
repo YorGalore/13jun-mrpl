@@ -7,7 +7,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from backend.config import DEFAULT_MODEL, SPARQL_PUBLIC_ENDPOINT
 from backend.llm.llm_models import LLMProvider
 from backend.logs.vector_store import search_logs
-from backend.patterns import LOG_KEYWORDS, MALWARE_KEYWORDS, THREAT_KEYWORDS, find_cve
+from backend.patterns import LOG_KEYWORDS, MALWARE_KEYWORDS, THREAT_KEYWORDS, find_cve, find_cwe
 from backend.pipeline.prompts import system_prompt_for
 from backend.sparql.client import PREFIXES, SPARQLConfig, VirtuosoClient, bindings_to_rows
 from backend.sparql.graph_context import build_attack_chain_context
@@ -94,6 +94,10 @@ def _kg_retrieve(message: str, model: str) -> Dict[str, Any]:
         except Exception as e:
             parts.append(f"[vuln lookup gagal: {e}]")
         triples.extend(_cve_triples(cve_id))
+        cwe_id = find_cwe(message)
+    if cwe_id and not cve_id:
+        triples.extend(_cwe_triples(cwe_id))
+        sources.append(SPARQL_PUBLIC_ENDPOINT)
 
     if any(kw in q for kw in THREAT_KEYWORDS):
         kw = next(kw for kw in THREAT_KEYWORDS if kw in q)

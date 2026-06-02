@@ -38,6 +38,7 @@ export function useChat() {
         mode: store.currentMode,
         sessionId: sessionId!,
         history,
+        model: store.currentModel || undefined,
       };
 
       const apiUrl =
@@ -63,6 +64,8 @@ export function useChat() {
         graphData: data.graphData,
         llmUsed: data.llmUsed,
         sources: data.sources,
+        method: data.method,
+        sparql: data.sparql,
       });
     } catch (err) {
       store.addMessage(sessionId!, {

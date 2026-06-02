@@ -8,7 +8,7 @@ interface ChatStore {
   activeSessionId: string | null;
   currentMode: AnalysisMode;
   currentModel: string;
-  availableModels: string[];
+  availableModels: [];
   isLoading: boolean;
   isGraphViewerOpen: boolean;
   selectedMessage: Message | null;
@@ -102,7 +102,7 @@ export const useChatStore = create<ChatStore>()(
               ? s.currentModel
               : models[0] ?? "",
         })),
-        
+
       setLoading: (loading) => set({ isLoading: loading }),
 
       toggleGraphViewer: (message) =>

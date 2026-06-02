@@ -14,6 +14,7 @@ export default function Home() {
     createSession,
     isGraphViewerOpen,
     toggleGraphViewer,
+    setAvailableModels
   } = useChatStore();
 
   const [mounted, setMounted] = useState(false);

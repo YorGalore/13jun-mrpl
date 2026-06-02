@@ -21,8 +21,10 @@ def _parse_models(raw: "str | None") -> tuple:
     return tuple(m.strip() for m in (raw or "").split(",") if m.strip())
 
 _DEFAULT_MODELS = "deepseek/deepseek-r1:free,meta-llama/llama-3.3-70b-instruct:free"
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o-mini")
 SUPPORTED_MODEL_NAMES = _parse_models(os.getenv("LLM_MODELS", _DEFAULT_MODELS)) or _parse_models(_DEFAULT_MODELS)
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL") or (
+    SUPPORTED_MODEL_NAMES[0] if SUPPORTED_MODEL_NAMES else "deepseek/deepseek-r1:free"
+)
 
 SPARQL_PUBLIC_ENDPOINT = os.getenv("SEPSES_PUBLIC_ENDPOINT", "https://sepses.ifs.tuwien.ac.at/sparql")
 SPARQL_LOCAL_ENDPOINT = os.getenv("SEPSES_LOCAL_ENDPOINT", "http://localhost:8890/sparql")

@@ -6,8 +6,7 @@ import { useChatStore } from "@/lib/store";
 import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 import { TypingIndicator } from "./TypingIndicator";
-import { ModeSelector } from "../analysis/ModeSelector";
-import { ModelSelector } from "../analysis/ModelSelector";
+import { ModeSelector, ModelSelector } from "../analysis/ModeSelector";
 import { useChat } from "@/hooks/useChat";
 
 import {
@@ -52,6 +51,7 @@ return ( <div className="flex flex-col h-full bg-[#F6F3EB]">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
         <ModeSelector />
+        <ModelSelector />
       </div>
 
       <button
