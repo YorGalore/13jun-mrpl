@@ -1,4 +1,4 @@
-#!/Users/frefreyor/Downloads/Kel_9-LLM-Chatbot-SEPSESCSKG/.venv/bin/python
+#!/Users/frefreyor/Downloads/mrpl/.venv/bin/python3.14
 import sys
 from httpx import main
 if __name__ == '__main__':

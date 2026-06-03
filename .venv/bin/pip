@@ -1,4 +1,4 @@
-#!/Users/frefreyor/Downloads/Kel9-LLM-Chatbot-SEPSESCSKG/.venv/bin/python3.14
+#!/Users/frefreyor/Downloads/mrpl/.venv/bin/python3.14
 import sys
 from pip._internal.cli.main import main
 if __name__ == '__main__':

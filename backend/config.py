@@ -1,55 +1,75 @@
+from __future__ import annotations
+
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openrouter").strip().lower()
+# Root repo = dua tingkat di atas file ini (backend/config.py -> backend -> root).
+ROOT = Path(__file__).resolve().parents[1]
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-OPENROUTER_SITE_URL = os.getenv("OPENROUTER_SITE_URL", "")
-OPENROUTER_APP_NAME = os.getenv("OPENROUTER_APP_NAME", "SEPSES CSKG Chatbot")
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
-
-OPENROUTER_AUTO_CHEAPEST = "openrouter:auto-cheapest"
-OPENROUTER_CHEAPEST_FREE_ONLY = os.getenv("OPENROUTER_CHEAPEST_FREE_ONLY", "1").strip() not in (
-    "0", "false", "False", "",
-)
-OPENROUTER_PRICING_TTL = int(os.getenv("OPENROUTER_PRICING_TTL", "600"))
-OPENROUTER_SORT_BY_PRICE = os.getenv("OPENROUTER_SORT_BY_PRICE", "1").strip() not in (
-    "0", "false", "False", "",
-)
-
-def _parse_models(raw: "str | None") -> tuple:
-    return tuple(m.strip() for m in (raw or "").split(",") if m.strip())
-
-_DEFAULT_MODELS = "meta-llama/llama-3.3-70b-instruct:free,deepseek/deepseek-r1:free"
-SUPPORTED_MODEL_NAMES = _parse_models(os.getenv("LLM_MODELS", _DEFAULT_MODELS)) or _parse_models(_DEFAULT_MODELS)
-
-# Munculkan opsi "auto-cheapest" di dropdown FE bila OpenRouter dikonfigurasi.
-if LLM_PROVIDER == "openrouter" or any(m.startswith("openrouter:") for m in SUPPORTED_MODEL_NAMES):
-    if OPENROUTER_AUTO_CHEAPEST not in SUPPORTED_MODEL_NAMES:
-        SUPPORTED_MODEL_NAMES = (OPENROUTER_AUTO_CHEAPEST, *SUPPORTED_MODEL_NAMES)
-
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL") or (
-    SUPPORTED_MODEL_NAMES[0] if SUPPORTED_MODEL_NAMES else "meta-llama/llama-3.3-70b-instruct:free"
-)
-
-SPARQL_PUBLIC_ENDPOINT = os.getenv("SEPSES_PUBLIC_ENDPOINT", "https://sepses.ifs.tuwien.ac.at/sparql")
-SPARQL_LOCAL_ENDPOINT = os.getenv("SEPSES_LOCAL_ENDPOINT", "http://localhost:8890/sparql")
-def _clean_graph(value: "str | None") -> "str | None":
+def _clean(value: "str | None") -> "str | None":
     if value is None:
         return None
     value = value.strip()
     return value or None
-DEFAULT_GRAPH = _clean_graph(os.getenv("SEPSES_DEFAULT_GRAPH", ""))
-LOCAL_GRAPH = _clean_graph(os.getenv("SEPSES_LOCAL_GRAPH", "http://sepses.local"))
-ENABLE_LOCAL_FALLBACK = os.getenv("SEPSES_ENABLE_LOCAL_FALLBACK", "1").strip() not in (
-    "0",
-    "false",
-    "False",
-    "",
+
+
+def _parse_models(raw: "str | None") -> tuple:
+    return tuple(m.strip() for m in (raw or "").split(",") if m.strip())
+
+
+def _int(name: str, default: int) -> int:
+    """int() yang aman: env kosong / bukan angka -> pakai default (tidak crash saat start)."""
+    raw = _clean(os.getenv(name))
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        print(f"[config] {name}={raw!r} bukan angka, pakai default {default}.")
+        return default
+
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini").strip().lower()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+OLLAMA_NUM_PREDICT = _int("OLLAMA_NUM_PREDICT", 1024)
+OLLAMA_NUM_CTX = _int("OLLAMA_NUM_CTX", 8192)
+
+LLM_TIMEOUT = _int("LLM_TIMEOUT", 120)
+
+_DEFAULT_MODELS = "gemini:gemini-2.5-flash,gemini:gemini-2.0-flash,ollama:llama3.2:3b"
+SUPPORTED_MODEL_NAMES = _parse_models(os.getenv("LLM_MODELS", _DEFAULT_MODELS)) or _parse_models(_DEFAULT_MODELS)
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL") or (
+    SUPPORTED_MODEL_NAMES[0] if SUPPORTED_MODEL_NAMES else "gemini:gemini-2.5-flash"
 )
-SPARQL_TIMEOUT = int(os.getenv("SEPSES_SPARQL_TIMEOUT", "60"))
-BACKEND_PORT = int(os.getenv("BACKEND_PORT", "8000"))
+
+SPARQL_PUBLIC_ENDPOINT = os.getenv("SEPSES_PUBLIC_ENDPOINT", "https://sepses.ifs.tuwien.ac.at/sparql")
+SPARQL_TIMEOUT = _int("SEPSES_SPARQL_TIMEOUT", 20)
+
+
+MITRE_DATASET_CANDIDATES = (
+    _clean(os.getenv("MITRE_DATASET_PATH")) and Path(os.getenv("MITRE_DATASET_PATH")),
+    ROOT / "data" / "enterprise-attack.json",
+    ROOT / "modul_a3" / "enterprise-attack.json",
+)
+MITRE_DATASET_CANDIDATES = tuple(p for p in MITRE_DATASET_CANDIDATES if p)
+
+
+# Pakai _clean(): bila env var ada tapi KOSONG (mis. "LOGS_FILE=" di .env),
+# os.getenv tetap mengembalikan "" -> Path("") == "." (direktori) -> error.
+# _clean() mengubah "" menjadi None sehingga default yang dipakai.
+LOGS_FILE = Path(_clean(os.getenv("LOGS_FILE")) or str(ROOT / "data" / "sample_logs.txt"))
+CHROMA_DIR = _clean(os.getenv("CHROMA_DIR")) or str(ROOT / "vector_db")
+
+# ============================================================
+# Server
+# ============================================================
+BACKEND_PORT = _int("BACKEND_PORT", 8000)
+FRONTEND_ORIGINS = os.getenv("FRONTEND_ORIGINS", "http://localhost:3000")

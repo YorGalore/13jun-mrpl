@@ -1,65 +1,86 @@
 from __future__ import annotations
+
+from typing import Optional, Tuple
+
 from backend.config import (
-    DEFAULT_MODEL, LLM_PROVIDER, SUPPORTED_MODEL_NAMES, OPENROUTER_API_KEY,
-    OPENROUTER_BASE_URL, OPENROUTER_SITE_URL, OPENROUTER_APP_NAME, OLLAMA_BASE_URL,
-    OPENROUTER_SORT_BY_PRICE,)
-from langchain_openai import ChatOpenAI
+    DEFAULT_MODEL,
+    GEMINI_API_KEY,
+    GEMINI_BASE_URL,
+    LLM_PROVIDER,
+    LLM_TIMEOUT,
+    OLLAMA_BASE_URL,
+    OLLAMA_NUM_CTX,
+    OLLAMA_NUM_PREDICT,
+    SUPPORTED_MODEL_NAMES,
+)
 
-# Token sentinel untuk "pilih model termurah otomatis" (mis. openrouter:auto-cheapest).
-_AUTO_CHEAPEST_ID = "auto-cheapest"
+_KNOWN_PROVIDERS = {"gemini", "ollama"}
 
-_KNOWN_PROVIDERS = {"openrouter", "ollama"}
 
-def _split_provider(model_name: str):
-    """Kembalikan (provider | None, model_id)."""
+def _split_provider(model_name: str) -> Tuple[Optional[str], str]:
+    """('gemini'|'ollama'|None, model_id). split(':',1) menjaga ':' di dalam id (mis. llama3.2:3b)."""
     if ":" in model_name:
         head, tail = model_name.split(":", 1)
         if head.lower() in _KNOWN_PROVIDERS and tail:
             return head.lower(), tail
     return None, model_name
 
-def _build(provider: str, model_id: str) -> ChatOpenAI:
-    if provider == "openrouter":
-        if not OPENROUTER_API_KEY:
-            raise ValueError(
-                "OPENROUTER_API_KEY belum diset. Daftar gratis di https://openrouter.ai "
-                "lalu isi OPENROUTER_API_KEY di .env."
-            )
-        # Auto pilih model termurah: resolusi terjadi saat runtime (di-cache).
-        if model_id.strip().lower() == _AUTO_CHEAPEST_ID:
-            from backend.llm.openrouter_pricing import resolve_cheapest_model
-            model_id = resolve_cheapest_model()
 
-        headers = {}
-        if OPENROUTER_SITE_URL:
-            headers["HTTP-Referer"] = OPENROUTER_SITE_URL
-        if OPENROUTER_APP_NAME:
-            headers["X-Title"] = OPENROUTER_APP_NAME
+def _normalize_ollama_base_url(url: str) -> str:
+    url = (url or "").rstrip("/")
+    if url.endswith("/v1"):
+        url = url[: -len("/v1")]
+    return url or "http://localhost:11434"
 
-        kwargs = dict(
-            model=model_id,
-            temperature=0,
-            api_key=OPENROUTER_API_KEY,
-            base_url=OPENROUTER_BASE_URL,
-            default_headers=headers or None,
+
+def _build_gemini(model_id: str):
+    if not GEMINI_API_KEY:
+        raise RuntimeError(
+            "GEMINI_API_KEY belum diset. Dapatkan dari https://aistudio.google.com/apikey "
+            "lalu isi di .env, atau pilih model 'ollama:...' di dropdown."
         )
-        # provider.sort = "price" -> selalu ambil PROVIDER termurah untuk model ini.
-        if OPENROUTER_SORT_BY_PRICE:
-            kwargs["extra_body"] = {"provider": {"sort": "price"}}
-        return ChatOpenAI(**kwargs)
+    try:
+        from langchain_openai import ChatOpenAI  # pakai SDK openai di dalamnya, seperti kel5
+    except ImportError as e:
+        raise RuntimeError(
+            "Paket 'langchain-openai' belum terpasang. Jalankan: pip install langchain-openai"
+        ) from e
 
+    return ChatOpenAI(
+        model=model_id,
+        api_key=GEMINI_API_KEY,
+        base_url=GEMINI_BASE_URL,  # endpoint OpenAI-compatible milik Gemini
+        temperature=0,
+        timeout=LLM_TIMEOUT,
+        max_retries=3,
+    )
+
+
+def _build_ollama(model_id: str):
+    try:
+        from langchain_ollama import ChatOllama  # impor lazy: hanya saat Ollama dipakai
+    except ImportError as e:
+        raise RuntimeError(
+            "Paket 'langchain-ollama' belum terpasang. Jalankan: pip install langchain-ollama "
+            "(atau pilih model 'gemini:...' di dropdown)."
+        ) from e
+    return ChatOllama(
+        model=model_id,
+        temperature=0,
+        base_url=_normalize_ollama_base_url(OLLAMA_BASE_URL),
+        num_predict=OLLAMA_NUM_PREDICT,
+        num_ctx=OLLAMA_NUM_CTX,
+        client_kwargs={"timeout": LLM_TIMEOUT},
+    )
+
+
+def _build(provider: str, model_id: str):
+    if provider == "gemini":
+        return _build_gemini(model_id)
     if provider == "ollama":
-        # Ollama menyediakan endpoint OpenAI-compatible di /v1; api_key diabaikan
-        # oleh Ollama tetapi harus diisi string non-kosong oleh klien OpenAI.
-        
-        return ChatOpenAI(
-            model=model_id,
-            temperature=0,
-            api_key="ollama",
-            base_url=OLLAMA_BASE_URL,
-        )
-
+        return _build_ollama(model_id)
     raise ValueError(f"Provider LLM tidak dikenal: {provider}")
+
 
 class LLMProvider:
     @staticmethod
@@ -71,7 +92,6 @@ class LLMProvider:
         return _build(provider, model_id)
 
 
-# Dipertahankan untuk kompatibilitas (mis. introspeksi provider tiap model).
 SUPPORTED_MODELS = {
     name: {"provider": (_split_provider(name)[0] or LLM_PROVIDER)}
     for name in SUPPORTED_MODEL_NAMES

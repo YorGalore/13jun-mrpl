@@ -1,8 +1,9 @@
 fastapi
 uvicorn[standard]
 langchain
-langchain-ollama
 langchain-openai
+langchain-ollama
+langchain-core
 openai
 python-dotenv
 SPARQLWrapper
