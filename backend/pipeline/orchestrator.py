@@ -110,7 +110,6 @@ def _kg_retrieve(message: str, model: str) -> Dict[str, Any]:
         parts.append(get_malware_context(kw))
         sources.append("MITRE ATT&CK")
 
-    # --- NL2SPARQL: jalur generik (regex fast-path lalu LLM) ---
     try:
         sparql_used, method = generate_sparql(message, model=model)
         rows = run_kg_query(sparql_used)
