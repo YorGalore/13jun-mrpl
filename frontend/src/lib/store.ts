@@ -107,10 +107,20 @@ export const useChatStore = create<ChatStore>()(
       setLoading: (loading) => set({ isLoading: loading }),
 
       toggleGraphViewer: (message) =>
-        set((s) => ({
-          isGraphViewerOpen: message ? true : !s.isGraphViewerOpen,
-          selectedMessage: message ?? s.selectedMessage,
-        })),
+        set((s) => {
+          const opening = message ? true : !s.isGraphViewerOpen;
+          let selected = message ?? s.selectedMessage;
+          // Jika dibuka via tombol header (tanpa pesan), pilih otomatis pesan
+          // asisten TERAKHIR yang punya triples, agar panel tidak kosong.
+          if (!message && opening) {
+            const active = s.sessions.find((x) => x.id === s.activeSessionId);
+            const withTriples = (active?.messages ?? []).filter(
+              (m) => m.role === "assistant" && (m.triples?.length ?? 0) > 0
+            );
+            if (withTriples.length) selected = withTriples[withTriples.length - 1];
+          }
+          return { isGraphViewerOpen: opening, selectedMessage: selected };
+        }),
  
       getActiveSession: () => {
         const { sessions, activeSessionId } = get();
@@ -122,7 +132,11 @@ export const useChatStore = create<ChatStore>()(
     }),
     {
       name: "cskg-chat-store",
-      partialize: (s) => ({ sessions: s.sessions, currentMode: s.currentMode }),
+      partialize: (s) => ({
+        sessions: s.sessions,
+        currentMode: s.currentMode,
+        currentModel: s.currentModel, // simpan pilihan model user agar tidak reset ke default
+      }),
     }
   )
 );

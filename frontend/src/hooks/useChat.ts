@@ -3,6 +3,8 @@
 import { useChatStore } from "@/lib/store";
 import { ChatRequest } from "@/lib/types";
 
+const REQUEST_TIMEOUT_MS = 180_000;
+
 export function useChat() {
   const store = useChatStore();
 
@@ -11,11 +13,6 @@ export function useChat() {
 
     if (!sessionId) {
       sessionId = store.createSession();
-    }
-
-    const session = store.getActiveSession();
-    if (!session && sessionId) {
-      // session just created
     }
 
     // Add user message
@@ -41,18 +38,35 @@ export function useChat() {
         model: store.currentModel || undefined,
       };
 
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL ?? "/api/chat";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "/api/chat";
 
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(request),
-      });
+      // Timeout eksplisit via AbortController supaya tidak menggantung selamanya.
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      let res: Response;
+      try {
+        res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(request),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+
+      if (!res.ok) {
+        let detail = "";
+        try {
+          detail = await res.text();
+        } catch {
+          /* abaikan */
+        }
+        throw new Error(
+          `Backend error ${res.status}: ${detail?.slice(0, 400) || res.statusText}`
+        );
+      }
 
       const data = await res.json();
 
@@ -67,11 +81,23 @@ export function useChat() {
         method: data.method,
         sparql: data.sparql,
       });
-    } catch (err) {
+    } catch (err: any) {
+      let msg: string;
+      if (err?.name === "AbortError") {
+        msg =
+          "⚠️ Permintaan timeout: model terlalu lama merespons (umum pada model lokal/Ollama saat beban tinggi). Coba lagi, atau pilih model lain di dropdown.";
+      } else if (
+        err instanceof TypeError ||
+        /failed to fetch|networkerror|load failed/i.test(err?.message ?? "")
+      ) {
+        msg =
+          "⚠️ Tidak dapat terhubung ke backend. Pastikan backend Python jalan di port 8000 dan NEXT_PUBLIC_API_URL benar.";
+      } else {
+        msg = `⚠️ ${err?.message || "Terjadi kesalahan saat memproses permintaan."}`;
+      }
       store.addMessage(sessionId!, {
         role: "assistant",
-        content:
-          "⚠️ Failed to connect to backend. Make sure the Python backend is running on port 8000.",
+        content: msg,
         mode: store.currentMode,
       });
     } finally {
