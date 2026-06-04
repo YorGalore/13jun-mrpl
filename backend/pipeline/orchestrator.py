@@ -39,7 +39,7 @@ def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
     sparql_used: Optional[str] = None
     method: Optional[str] = None
     q = message.lower()
-
+ 
     if route["kg"]:
         # --- SEPSES (sparql gateway) ---
         cve_id = find_cve(message)
@@ -58,7 +58,7 @@ def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
                 sources.append("SEPSES CSKG (publik)")
             except Exception as e:
                 print(f"[orch] sparql CWE gagal: {e}")
-
+ 
         # --- MITRE (mitre gateway) ---
         if any(k in q for k in THREAT_KEYWORDS):
             actor = extract_actor_name(message)
@@ -84,8 +84,8 @@ def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
                     sources.append("MITRE ATT&CK (Techniques)")
             except Exception as e:
                 print(f"[orch] mitre technique gagal: {e}")
-
-
+ 
+ 
         if cve_id or cwe_id:
             try:
                 sparql_used, method = sparql.generate_sparql(message, model=model)
@@ -97,7 +97,7 @@ def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
                     sources.append("SEPSES CSKG (SPARQL)")
             except Exception as e:
                 print(f"[orch] nl2sparql gagal: {e}")
-
+ 
     elif route["mitre_general"]:
         try:
             ctx = mitre.technique_context(message)
@@ -106,7 +106,7 @@ def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
                 sources.append("MITRE ATT&CK (Techniques)")
         except Exception as e:
             print(f"[orch] mitre technique gagal: {e}")
-
+ 
     if route["logs"]:
         try:
             result = logs.search_logs(message)
@@ -115,11 +115,11 @@ def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
             sources.append("Log keamanan lokal (ChromaDB)")
         except Exception as e:
             print(f"[orch] log search gagal: {e}")
-
+ 
     context = "\n\n".join(p for p in parts if p)
     if len(context) > MAX_CONTEXT_CHARS:
         context = context[:MAX_CONTEXT_CHARS] + "\n…[konteks dipotong]"
-
+ 
     return {
         "context": context,
         "sources": list(dict.fromkeys(sources)),
@@ -127,7 +127,7 @@ def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
         "sparql": sparql_used,
         "method": method,
     }
-
+ 
 
 def _history_messages(history: Optional[List[Dict[str, str]]]):
     msgs = []
@@ -141,6 +141,34 @@ def _history_messages(history: Optional[List[Dict[str, str]]]):
         elif role == "assistant":
             msgs.append(AIMessage(content=content))
     return msgs
+
+def _text(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: List[str] = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict):
+                parts.append(str(block.get("text") or block.get("content") or ""))
+        return "".join(parts).strip()
+    if content is None:
+        return ""
+    return str(content)
+ 
+ 
+def _failure_hint(model: str, err: Exception) -> str:
+    if not model.lower().startswith("ollama"):
+        return ""
+    e = str(err).lower()
+    if any(k in e for k in ("connection", "connect", "refused", "max retries", "timed out", "timeout")):
+        return ("\n\nPetunjuk: pastikan Ollama berjalan (`ollama serve`) dan OLLAMA_BASE_URL benar "
+                "(host: http://localhost:11434 ; di Docker: http://host.docker.internal:11434).")
+    if any(k in e for k in ("not found", "no such model", "pull", "model")):
+        model_id = model.split(":", 1)[1] if ":" in model else model
+        return f"\n\nPetunjuk: model belum tersedia. Jalankan: `ollama pull {model_id}`."
+    return ""
 
 
 def _synthesize(context: str, message: str, mode: str, model: str, history=None) -> Dict[str, Any]:
@@ -160,14 +188,13 @@ def _synthesize(context: str, message: str, mode: str, model: str, history=None)
         messages.extend(_history_messages(history))
         messages.append(HumanMessage(content=user_msg))
         resp = llm.invoke(messages)
-        return {"message": resp.content, "llmUsed": resolved, "ok": True, "error": None}
+        return {"message": _text(resp.content), "llmUsed": resolved, "ok": True, "error": None}
     except Exception as e:
         msg = (
-            f"⚠️ Model '{model}' gagal menjawab: {e}\n\n"
+            f"⚠️ Model '{model}' gagal menjawab: {e}{_failure_hint(model, e)}\n\n"
             + (f"Konteks yang berhasil diambil:\n{context}" if context else "")
         )
         return {"message": msg, "llmUsed": resolved, "ok": False, "error": str(e)}
-
 
 def answer(message: str, mode: str = "threat_intelligence", model: str = DEFAULT_MODEL, history=None) -> Dict[str, Any]:
     ctx = _collect_context(message, mode, model)

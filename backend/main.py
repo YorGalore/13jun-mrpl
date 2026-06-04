@@ -1,8 +1,5 @@
-"""FastAPI entrypoint. Hanya bergantung pada orchestrator + config."""
 from __future__ import annotations
-
 from typing import Any, Dict, List, Optional
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -93,19 +90,41 @@ def models() -> Dict[str, Any]:
 
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> Dict[str, Any]:
-    return answer(
-        req.message,
-        mode=req.mode,
-        model=req.model or DEFAULT_MODEL,
-        history=[h.model_dump() for h in req.history],
-    )
-
+    try:
+        return answer(
+            req.message,
+            mode=req.mode,
+            model=req.model or DEFAULT_MODEL,
+            history=[h.model_dump() for h in req.history],
+        )
+    except Exception as e:  # jaring pengaman: jangan balas 500 mentah ke UI
+        traceback.print_exc()
+        return {
+            "message": f"⚠️ Gagal memproses permintaan: {e}",
+            "triples": [],
+            "llmUsed": req.model or DEFAULT_MODEL,
+            "sources": [],
+            "method": None,
+            "sparql": None,
+        }
 
 @app.post("/api/compare", response_model=CompareResponse)
 def compare_models(req: CompareRequest) -> Dict[str, Any]:
-    return compare(
-        req.message,
-        models=req.models or list(SUPPORTED_MODEL_NAMES),
-        mode=req.mode,
-        history=[h.model_dump() for h in req.history],
-    )
+    try:
+        return compare(
+            req.message,
+            models=req.models or list(SUPPORTED_MODEL_NAMES),
+            mode=req.mode,
+            history=[h.model_dump() for h in req.history],
+        )
+    except Exception as e:  
+        traceback.print_exc()
+        return {
+            "question": req.message,
+            "mode": req.mode,
+            "answers": [],
+            "triples": [],
+            "sources": [],
+            "method": None,
+            "sparql": None,
+        }
