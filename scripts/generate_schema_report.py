@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from backend.sparql.schema_inspector import main
+from backend.sources.schema_inspector import main
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

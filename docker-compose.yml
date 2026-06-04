@@ -19,3 +19,72 @@ services:
       timeout: 10s
       retries: 10
     restart: unless-stopped
+
+  virtuoso-loader:
+    image: openlink/virtuoso-opensource-7:latest
+    container_name: virtuoso-loader
+    depends_on:
+      - virtuoso
+    environment:
+      VIRTUOSO_HOST: virtuoso
+      VIRTUOSO_PORT: "1111"
+      DBA_PASSWORD: dba
+      TARGET_GRAPH: "http://sepses.local"
+      DB_DIR: /database
+    volumes:
+      - ./scripts/virtuoso_init.sh:/init/virtuoso_init.sh:ro
+    entrypoint: ["/bin/bash", "/init/virtuoso_init.sh"]
+    restart: "no"
+
+  # Backend FastAPI + orchestrator (RAG / GraphRAG).
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sepses-backend
+    depends_on:
+      - virtuoso
+    environment:
+      # --- LLM ---
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      LLM_MODELS: ${LLM_MODELS:-gemini:gemini-2.5-flash,gemini:gemini-2.0-flash,ollama:llama3.2:3b}
+      DEFAULT_MODEL: ${DEFAULT_MODEL:-gemini:gemini-2.5-flash}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      LLM_TIMEOUT: ${LLM_TIMEOUT:-120}
+
+      SEPSES_PUBLIC_ENDPOINT: ${SEPSES_PUBLIC_ENDPOINT:-https://sepses.ifs.tuwien.ac.at/sparql}
+      SEPSES_SPARQL_TIMEOUT: ${SEPSES_SPARQL_TIMEOUT:-20}
+
+      SEPSES_ENABLE_LOCAL_FALLBACK: "true"
+      SEPSES_LOCAL_ENDPOINT: "http://virtuoso:8890/sparql"
+      SEPSES_LOCAL_GRAPH: "http://sepses.local"
+
+      MITRE_DATASET_PATH: /app/data/enterprise-attack.json
+      LOGS_FILE: /app/data/sample_logs.txt
+      # --- CORS: izinkan frontend ---
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:3000}
+    volumes:
+      - ./data:/app/data:ro
+      - ./modul_a3:/app/modul_a3:ro
+    ports:
+      - "8000:8000"
+    
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sepses-frontend
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      BACKEND_URL: "http://backend:8000"
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
