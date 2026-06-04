@@ -8,8 +8,11 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# BACKEND_URL hanya dievaluasi saat runtime (next start) lewat rewrites(),
+# jadi tidak perlu diset saat build.
 RUN npm run build
 
+# --- runner: next start ---
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -20,4 +23,5 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./next.config.ts
 
 EXPOSE 3000
+# next start membaca BACKEND_URL dari env (di-set di docker-compose.yml -> http://backend:8000)
 CMD ["npm", "run", "start"]

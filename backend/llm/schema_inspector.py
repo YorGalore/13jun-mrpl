@@ -17,6 +17,7 @@ from backend.config import (
     SPARQL_TIMEOUT,
 )
 
+# Endpoint SEPSES kadang memakai sertifikat rewel; lewati verifikasi SSL.
 ssl._create_default_https_context = ssl._create_unverified_context
 
 PREFIXES = """\
@@ -30,6 +31,7 @@ PREFIX cpe:  <http://w3id.org/sepses/vocab/ref/cpe#>
 PREFIX cvss: <http://w3id.org/sepses/vocab/ref/cvss#>
 """
 
+# Kelas & relasi keamanan yang ingin kita dokumentasikan secara eksplisit.
 CURATED_CLASSES = [
     ("cve:CVE", "CVE", "http://w3id.org/sepses/vocab/ref/cve#CVE"),
     ("cwe:Weakness", "CWE Weakness", "http://w3id.org/sepses/vocab/ref/cwe#Weakness"),

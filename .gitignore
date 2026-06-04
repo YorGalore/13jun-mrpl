@@ -10,8 +10,8 @@ vector_db/
 /bin/*
 /.idea/*
 
-data/graph0000001_cpe.ttl
-data/graph0000001_cve.ttl
+data/cskg_dumps/
+*.ttl
 
 # virtuoso runtime
 *.db

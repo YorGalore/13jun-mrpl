@@ -20,6 +20,9 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # One-shot: muat dump TTL lokal ke Virtuoso (idempoten; lihat scripts/virtuoso_init.sh).
+  # Tujuan: menjadikan Virtuoso lokal benar-benar terisi sehingga bisa jadi cadangan
+  # (fallback) saat endpoint publik SEPSES gagal/kosong (issue #1).
   virtuoso-loader:
     image: openlink/virtuoso-opensource-7:latest
     container_name: virtuoso-loader
@@ -53,14 +56,14 @@ services:
       GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       LLM_TIMEOUT: ${LLM_TIMEOUT:-120}
-
+      # --- SEPSES publik (sumber utama) ---
       SEPSES_PUBLIC_ENDPOINT: ${SEPSES_PUBLIC_ENDPOINT:-https://sepses.ifs.tuwien.ac.at/sparql}
       SEPSES_SPARQL_TIMEOUT: ${SEPSES_SPARQL_TIMEOUT:-20}
-
+      # --- Cadangan: Virtuoso lokal (issue #1) ---
       SEPSES_ENABLE_LOCAL_FALLBACK: "true"
       SEPSES_LOCAL_ENDPOINT: "http://virtuoso:8890/sparql"
       SEPSES_LOCAL_GRAPH: "http://sepses.local"
-
+      # --- Dataset (di-mount read-only di bawah) ---
       MITRE_DATASET_PATH: /app/data/enterprise-attack.json
       LOGS_FILE: /app/data/sample_logs.txt
       # --- CORS: izinkan frontend ---
@@ -70,11 +73,13 @@ services:
       - ./modul_a3:/app/modul_a3:ro
     ports:
       - "8000:8000"
-    
+    # Agar Ollama yang jalan di host (localhost:11434) bisa diakses dari container.
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
+  # Frontend Next.js. Memanggil backend lewat rewrites() (BACKEND_URL),
+  # jadi browser cukup hit same-origin /api/* (tanpa isu CORS).
   frontend:
     build:
       context: ./frontend

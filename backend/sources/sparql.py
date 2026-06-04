@@ -1,15 +1,3 @@
-"""
-GATEWAY 1 — SEPSES (SELALU endpoint publik).
-
-Satu-satunya pintu ke knowledge graph SEPSES. Melebur empat file lama:
-client.py + graph_context.py + nl2sparql.py + modul_vulnerability.py.
-
-Aturan:
-- run_query() adalah SATU-SATUNYA eksekutor SPARQL; semua fungsi lewat sini.
-- TIDAK ada fallback lokal. Bila endpoint gagal -> kembalikan hasil kosong
-  ([] atau pesan singkat), JANGAN raise, supaya orchestrator tidak crash.
-- Hanya bergantung pada: backend.config, backend.patterns, backend.llm.llm_models.
-"""
 from __future__ import annotations
 
 import re
@@ -19,7 +7,13 @@ from typing import Dict, List, Optional, Tuple
 from langchain_core.prompts import PromptTemplate
 from SPARQLWrapper import JSON, POST, SPARQLWrapper
 
-from backend.config import SPARQL_PUBLIC_ENDPOINT, SPARQL_TIMEOUT, SPARQL_LOCAL_GRAPH, SPARQL_PUBLIC_ENDPOINT, SPARQL_TIMEOUT
+from backend.config import (
+    SPARQL_ENABLE_LOCAL_FALLBACK,
+    SPARQL_LOCAL_ENDPOINT,
+    SPARQL_LOCAL_GRAPH,
+    SPARQL_PUBLIC_ENDPOINT,
+    SPARQL_TIMEOUT,
+)
 from backend.llm.llm_models import DEFAULT_MODEL, LLMProvider
 from backend.patterns import CVE_RE, CWE_RE
 
@@ -56,14 +50,20 @@ COMMON SHAPES:
 _FORBIDDEN = re.compile(r"\b(INSERT|DELETE|DROP|CLEAR|LOAD|CREATE|COPY|MOVE|ADD)\b", re.IGNORECASE)
 
 
+# =====================================================================
+# CORE — eksekutor SPARQL: SEPSES publik dulu, Virtuoso lokal sebagai cadangan
+# =====================================================================
 def _wrapper(endpoint: str, graph: Optional[str] = None) -> SPARQLWrapper:
     w = SPARQLWrapper(endpoint)
     w.setReturnFormat(JSON)
     w.setMethod(POST)
     w.setTimeout(SPARQL_TIMEOUT)
+    # Untuk Virtuoso lokal, data dimuat ke named graph (mis. http://sepses.local).
+    # Set default-graph agar query tanpa klausa GRAPH tetap mengenai data tersebut.
     if graph:
         w.addDefaultGraph(graph)
     return w
+
 
 def _exec(endpoint: str, query: str, graph: Optional[str] = None) -> List[Dict[str, str]]:
     w = _wrapper(endpoint, graph)
@@ -74,13 +74,18 @@ def _exec(endpoint: str, query: str, graph: Optional[str] = None) -> List[Dict[s
 
 
 def run_query(query: str) -> List[Dict[str, str]]:
+    """Jalankan SPARQL. Urutan: (1) endpoint publik SEPSES; bila gagal ATAU kosong
+    DAN fallback diaktifkan, (2) Virtuoso lokal. Tidak pernah raise -> [] bila semua gagal."""
+    # 1) Sumber utama: endpoint publik SEPSES.
     try:
         rows = _exec(SPARQL_PUBLIC_ENDPOINT, query)
         if rows:
             return rows
+        # rows kosong: bisa jadi SEPSES memang tidak punya datanya -> lanjut ke fallback.
     except Exception as e:  # endpoint mati / timeout / jaringan
         print(f"[sparql] endpoint publik gagal: {e}")
- 
+
+    # 2) Cadangan: Virtuoso lokal (mis. SEPSES down, atau datanya hanya ada di lokal).
     if SPARQL_ENABLE_LOCAL_FALLBACK and SPARQL_LOCAL_ENDPOINT:
         try:
             rows = _exec(SPARQL_LOCAL_ENDPOINT, query, graph=SPARQL_LOCAL_GRAPH)
@@ -89,7 +94,7 @@ def run_query(query: str) -> List[Dict[str, str]]:
                 return rows
         except Exception as e:  # virtuoso belum jalan / belum ada datanya
             print(f"[sparql] fallback lokal gagal: {e}")
- 
+
     return []
 
 
@@ -108,14 +113,15 @@ def _local_name(uri: str) -> str:
     return parts[-1] if parts and parts[-1] else uri
 
 
-
+# =====================================================================
 # VULNERABILITY CONTEXT (eks modul_vulnerability.get_vuln_context)
+# =====================================================================
 def vuln_context(cve_id: str) -> str:
     """Ringkasan kerentanan CVE -> CWE -> CAPEC + CVSS sebagai teks untuk LLM."""
     cve_id = (cve_id or "").strip().upper()
     if not cve_id:
         return ""
- 
+
     query = f"""{PREFIXES}
 SELECT DISTINCT ?description ?cweName ?capecName ?mitigation ?confImpact ?cvssScore ?consequenceImpact
 WHERE {{
@@ -134,17 +140,17 @@ WHERE {{
     OPTIONAL {{ ?cwe cwe:hasCommonConsequence ?cc . ?cc cwe:consequenceImpact ?consequenceImpact . }}
   }}
 }} LIMIT 200"""
- 
+
     rows = run_query(query)
     if not rows:
         return f"Tidak ada data ditemukan untuk {cve_id} (atau endpoint publik tidak tersedia)."
- 
+
     def first(key: str) -> str:
         return next((r.get(key, "") for r in rows if r.get(key)), "")
- 
+
     def uniq(key: str) -> List[str]:
         return sorted({r.get(key, "") for r in rows if r.get(key)})
- 
+
     description = first("description")
     cvss_score = first("cvssScore")
     conf_impact = first("confImpact")
@@ -152,7 +158,7 @@ WHERE {{
     attacks = uniq("capecName")
     consequences = uniq("consequenceImpact")
     mitigations = [r.get("mitigation", "") for r in rows if r.get("mitigation")]
- 
+
     out = f"=== Informasi Kerentanan {cve_id} ===\n"
     if cvss_score:
         out += f"CVSS Score   : {cvss_score}\n"
@@ -168,13 +174,15 @@ WHERE {{
         out += f"Pola Serangan: {', '.join(attacks)}\n"
     if mitigations:
         out += f"Mitigasi     : {mitigations[0][:300]}\n"
- 
+
     if out.strip().endswith("==="):
         out += "(CVE ditemukan, namun atribut detail tidak tersedia di KG.)\n"
     return out
 
 
+# =====================================================================
 # ATTACK CHAIN (eks graph_context.build_attack_chain_context)
+# =====================================================================
 def attack_chain_context(cve_id: str) -> str:
     cve_id = (cve_id or "").strip().upper()
     query = f"""{PREFIXES}
@@ -190,13 +198,13 @@ SELECT DISTINCT ?description ?score ?cweName ?capecName ?mitigation WHERE {{
     rows = run_query(query)
     if not rows:
         return f"Tidak ada rantai serangan di KG untuk {cve_id}."
- 
+
     score = next((r["score"] for r in rows if r.get("score")), "")
     description = next((r["description"] for r in rows if r.get("description")), "")
     cwes = sorted({r["cweName"] for r in rows if r.get("cweName")})
     capecs = sorted({r["capecName"] for r in rows if r.get("capecName")})
     mitigation = next((r["mitigation"] for r in rows if r.get("mitigation")), "")
- 
+
     lines = [f"=== Attack Chain {cve_id} ==="]
     if score:
         lines.append(f"CVSS3 Base Score : {score}")
@@ -211,7 +219,9 @@ SELECT DISTINCT ?description ?score ?cweName ?capecName ?mitigation WHERE {{
     return "\n".join(lines)
 
 
+# =====================================================================
 # TRIPLES untuk visualisasi graph (eks orchestrator._cve_triples/_cwe_triples)
+# =====================================================================
 def _mk(subject: str, predicate: str, obj: str, seen: set, out: List[Dict[str, str]]) -> None:
     obj = (obj or "").strip()
     if not obj:
@@ -221,12 +231,12 @@ def _mk(subject: str, predicate: str, obj: str, seen: set, out: List[Dict[str, s
         return
     seen.add(key)
     out.append({"subject": subject, "predicate": predicate, "object": obj, "source": SPARQL_PUBLIC_ENDPOINT})
- 
- 
+
+
 def cve_triples(cve_id: str, limit: int = 25) -> List[Dict[str, str]]:
     """Triples bermakna untuk visualisasi: CVE -> CWE -> CAPEC + CVSS.
     Dibangun dari rantai serangan (data yang terbukti tersedia), bukan dari
-    kueri mentah `?cve ?p ?o` yang sering kosong."""
+    kueri mentah `?cve ?p ?o` yang sering kosong/berisik."""
     cve_id = (cve_id or "").strip().upper()
     query = f"""{PREFIXES}
 SELECT DISTINCT ?cwe ?capec ?score WHERE {{
@@ -248,8 +258,8 @@ SELECT DISTINCT ?cwe ?capec ?score WHERE {{
             if capec:
                 _mk(cwe, "enablesAttack", capec, seen, out)
     return out
- 
- 
+
+
 def cwe_triples(cwe_id: str, limit: int = 25) -> List[Dict[str, str]]:
     """Triples bermakna untuk CWE -> CAPEC."""
     cwe_id = (cwe_id or "").strip().upper()
@@ -267,7 +277,10 @@ SELECT DISTINCT ?capec WHERE {{
             _mk(cwe_id, "enablesAttack", capec, seen, out)
     return out
 
-# NL -> SPARQL (eks nl2sparql) — lalu LLM, lalu fallback
+
+# =====================================================================
+# NL -> SPARQL (eks nl2sparql) — regex cepat, lalu LLM, lalu fallback
+# =====================================================================
 _PROMPT = PromptTemplate(
     input_variables=["ontology", "question"],
     template=(
@@ -278,6 +291,7 @@ _PROMPT = PromptTemplate(
     ),
 )
 
+
 def _cve_full(cid: str) -> str:
     return f"""{PREFIXES}
 SELECT DISTINCT ?description ?publishedDate ?cweName ?score WHERE {{
@@ -287,8 +301,8 @@ SELECT DISTINCT ?description ?publishedDate ?cweName ?score WHERE {{
   OPTIONAL {{ ?cve cve:hasCWE ?cwe . ?cwe cwe:name ?cweName . }}
   OPTIONAL {{ ?cve cve:hasCVSS3BaseMetric ?m . ?m cvss:baseScore ?score . }}
 }} LIMIT 50"""
- 
- 
+
+
 def _cve_cvss(cid: str) -> str:
     return f"""{PREFIXES}
 SELECT ?score ?confImpact WHERE {{
@@ -296,8 +310,8 @@ SELECT ?score ?confImpact WHERE {{
   OPTIONAL {{ ?cve cve:hasCVSS3BaseMetric ?m3 . ?m3 cvss:baseScore ?score ; cvss:confidentialityImpact ?confImpact . }}
   OPTIONAL {{ ?cve cve:hasCVSS2BaseMetric ?m2 . ?m2 cvss:baseScore ?score ; cvss:confidentialityImpact ?confImpact . }}
 }} LIMIT 10"""
- 
- 
+
+
 def _cve_capec(cid: str) -> str:
     return f"""{PREFIXES}
 SELECT DISTINCT ?cweName ?capecName ?mitigation WHERE {{
@@ -306,13 +320,13 @@ SELECT DISTINCT ?cweName ?capecName ?mitigation WHERE {{
   OPTIONAL {{ ?cwe cwe:hasCAPEC ?capec . ?capec capec:name ?capecName .
              OPTIONAL {{ ?capec capec:mitigation ?mitigation . }} }}
 }} LIMIT 50"""
- 
- 
+
+
 def _cves_by_cwe(cwe_id: str) -> str:
     return f"""{PREFIXES}
 SELECT DISTINCT ?cveId WHERE {{ ?cwe cwe:id "{cwe_id}" . ?cve cve:hasCWE ?cwe ; cve:id ?cveId . }} LIMIT 30"""
- 
- 
+
+
 def _high_severity_fallback() -> str:
     return f"""{PREFIXES}
 SELECT DISTINCT ?cveId ?score WHERE {{
@@ -336,22 +350,22 @@ def _regex_sparql(question: str) -> Optional[str]:
         return _cves_by_cwe(cwe.group().upper())
     return None
 
- 
+
 def _extract_sparql(text: str) -> str:
     m = re.search(r"```(?:sparql)?\s*([\s\S]+?)```", text, re.IGNORECASE)
     query = m.group(1).strip() if m else text.strip()
     if "PREFIX" not in query.upper():
         query = f"{PREFIXES}\n{query}"
     return query
- 
- 
+
+
 def _valid_sparql(query: str) -> bool:
     if _FORBIDDEN.search(query):
         return False
     up = query.upper()
     return ("SELECT" in up or "ASK" in up) and "{" in query and "}" in query
- 
- 
+
+
 def generate_sparql(question: str, model: str = DEFAULT_MODEL) -> Tuple[str, str]:
     """Kembalikan (query, method). method: regex | llm | fallback | fallback_keyword. Tidak pernah raise."""
     q = _regex_sparql(question)
