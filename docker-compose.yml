@@ -20,9 +20,6 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # One-shot: muat dump TTL lokal ke Virtuoso (idempoten; lihat scripts/virtuoso_init.sh).
-  # Tujuan: menjadikan Virtuoso lokal benar-benar terisi sehingga bisa jadi cadangan
-  # (fallback) saat endpoint publik SEPSES gagal/kosong (issue #1).
   virtuoso-loader:
     image: openlink/virtuoso-opensource-7:latest
     container_name: virtuoso-loader
@@ -66,11 +63,16 @@ services:
       # --- Dataset (di-mount read-only di bawah) ---
       MITRE_DATASET_PATH: /app/data/enterprise-attack.json
       LOGS_FILE: /app/data/sample_logs.txt
+      # --- Vector DB log / ChromaDB (issue #2) ---
+      # Diisi OTOMATIS saat backend start (chunk->embed->ingest dari LOGS_FILE) dan dipersistenkan lewat named volume "chroma_db" agar tidak embed ulang tiap rebuild.
+      CHROMA_DIR: /app/vector_db
       # --- CORS: izinkan frontend ---
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:3000}
     volumes:
       - ./data:/app/data:ro
       - ./modul_a3:/app/modul_a3:ro
+      - chroma_db:/app/vector_db            
+      - chroma_model_cache:/root/.cache/chroma  
     ports:
       - "8000:8000"
     # Agar Ollama yang jalan di host (localhost:11434) bisa diakses dari container.
@@ -78,8 +80,6 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
-  # Frontend Next.js. Memanggil backend lewat rewrites() (BACKEND_URL),
-  # jadi browser cukup hit same-origin /api/* (tanpa isu CORS).
   frontend:
     build:
       context: ./frontend
@@ -93,3 +93,7 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
+
+volumes:
+  chroma_db:            
+  chroma_model_cache:   

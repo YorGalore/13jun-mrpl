@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Root repo = dua tingkat di atas file ini (backend/config.py -> backend -> root).
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -23,7 +22,6 @@ def _parse_models(raw: "str | None") -> tuple:
 
 
 def _int(name: str, default: int) -> int:
-    """int() yang aman: env kosong / bukan angka -> pakai default (tidak crash saat start)."""
     raw = _clean(os.getenv(name))
     if raw is None:
         return default
@@ -54,6 +52,29 @@ SPARQL_PUBLIC_ENDPOINT = os.getenv("SEPSES_PUBLIC_ENDPOINT", "https://sepses.ifs
 SPARQL_TIMEOUT = _int("SEPSES_SPARQL_TIMEOUT", 20)
 
 
+def _bool(name: str, default: bool = False) -> bool:
+    raw = _clean(os.getenv(name))
+    if raw is None:
+        return default
+    return raw.lower() in ("1", "true", "yes", "on", "y")
+
+
+def _first_env(*names: str) -> "str | None":
+    """Ambil env var pertama yang terisi dari daftar nama (alias)."""
+    for n in names:
+        v = _clean(os.getenv(n))
+        if v:
+            return v
+    return None
+
+
+SPARQL_ENABLE_LOCAL_FALLBACK = (
+    _bool("SEPSES_ENABLE_LOCAL_FALLBACK", False) or _bool("SPARQL_ENABLE_LOCAL_FALLBACK", False)
+)
+SPARQL_LOCAL_ENDPOINT = _first_env("SEPSES_LOCAL_ENDPOINT", "SPARQL_LOCAL_ENDPOINT") or "http://localhost:8890/sparql"
+SPARQL_LOCAL_GRAPH = _first_env("SEPSES_LOCAL_GRAPH", "SPARQL_LOCAL_GRAPH") or "http://sepses.local"
+
+
 MITRE_DATASET_CANDIDATES = (
     _clean(os.getenv("MITRE_DATASET_PATH")) and Path(os.getenv("MITRE_DATASET_PATH")),
     ROOT / "data" / "enterprise-attack.json",
@@ -62,14 +83,8 @@ MITRE_DATASET_CANDIDATES = (
 MITRE_DATASET_CANDIDATES = tuple(p for p in MITRE_DATASET_CANDIDATES if p)
 
 
-# Pakai _clean(): bila env var ada tapi KOSONG (mis. "LOGS_FILE=" di .env),
-# os.getenv tetap mengembalikan "" -> Path("") == "." (direktori) -> error.
-# _clean() mengubah "" menjadi None sehingga default yang dipakai.
 LOGS_FILE = Path(_clean(os.getenv("LOGS_FILE")) or str(ROOT / "data" / "sample_logs.txt"))
 CHROMA_DIR = _clean(os.getenv("CHROMA_DIR")) or str(ROOT / "vector_db")
 
-# ============================================================
-# Server
-# ============================================================
 BACKEND_PORT = _int("BACKEND_PORT", 8000)
 FRONTEND_ORIGINS = os.getenv("FRONTEND_ORIGINS", "http://localhost:3000")

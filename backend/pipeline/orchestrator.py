@@ -112,7 +112,7 @@ def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
             result = logs.search_logs(message)
             if result:
                 parts.append(result)
-            sources.append("Log keamanan lokal (ChromaDB)")
+            sources.append(f"Log keamanan lokal ({logs.backend_label()})")
         except Exception as e:
             print(f"[orch] log search gagal: {e}")
  
