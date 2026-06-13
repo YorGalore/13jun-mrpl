@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -28,8 +29,8 @@ _AUTH_RE = re.compile(
 )
 _FIREWALL_RE = re.compile(r"\b(UFW|iptables|nftables|firewalld|kernel:.*\b(SRC|DST)=)\b", re.IGNORECASE)
 _SYSLOG_RE = re.compile(
-    r"^[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\b|"  # "Oct 16 12:00:00"
-    r"<\d{1,3}>\d?\s",                                   # PRI syslog "<34>1 ..."
+    r"^[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\b|"  
+    r"<\d{1,3}>\d?\s",                                   
     re.IGNORECASE,
 )
  
@@ -57,8 +58,6 @@ def classify_log(line: str) -> Tuple[str, str]:
 
 # LOADING & CHUNKING
 def load_logs(filepath: "str | Path" = LOGS_FILE) -> List[str]:
-    """Baca file log per-baris (1 baris = 1 event). Abaikan baris komentar (#).
-    Fallback ke sample default bila file tak ada/ kosong."""
     path = Path(filepath)
     if not path.is_file():
         print(f"[logs] {path} bukan file valid, pakai sample default.")
@@ -84,14 +83,11 @@ def _chunk_one(line: str, max_chars: int = _CHUNK_MAX_CHARS) -> List[str]:
     return chunks
 
 def _stable_id(text: str, log_type: str = "") -> str:
-    """ID deterministik dari isi (+tipe) -> ingest idempoten (tak duplikat saat restart)."""
     basis = f"{log_type}|{text}" if log_type else text
     return "log-" + hashlib.sha1(basis.encode("utf-8")).hexdigest()[:16]
  
  
 def _prepare(lines: List[str]) -> List[Tuple[str, str]]:
-    """Dari baris mentah -> daftar (chunk_text, log_type). Klasifikasi sekali per baris,
-    lalu pecah panjang >512 char menjadi beberapa chunk yang mewarisi tipe yang sama."""
     out: List[Tuple[str, str]] = []
     for ln in lines:
         log_type, clean = classify_log(ln)
@@ -135,8 +131,6 @@ class _ChromaBackend:
         self._col.upsert(ids=u_ids, documents=u_docs, metadatas=u_metas)
  
     def insert(self, doc_id: str, text: str, log_type: Optional[str] = None) -> int:
-        """Tambah satu/lebih event. Tiap baris diklasifikasi (atau pakai log_type paksaan).
-        Kembalikan jumlah chunk yang ter-upsert."""
         text = (text or "").strip()
         if not text:
             return 0
@@ -145,7 +139,7 @@ class _ChromaBackend:
             if not raw_line.strip():
                 continue
             lt, clean = classify_log(raw_line)
-            if log_type:  # override eksplisit dari pemanggil/endpoint
+            if log_type:  
                 lt = log_type.lower()
             for c in _chunk_one(clean):
                 if c:
@@ -182,6 +176,18 @@ class _ChromaBackend:
             except Exception:
                 out[lt] = 0
         return out
+
+    def reset(self) -> None:
+        try:
+            self._client.delete_collection(name=_COLLECTION_NAME)
+        except Exception:
+            pass  # koleksi mungkin belum ada
+        self._col = self._client.get_or_create_collection(
+            name=_COLLECTION_NAME,
+            embedding_function=self._embed,
+            metadata={"hnsw:space": "cosine"},
+        )
+        self._ingest(_prepare(load_logs()), source="sample_logs")
  
  
 # TF-IDF in-memory (fallback bila Chroma tidak tersedia)
@@ -245,6 +251,12 @@ class _TfidfBackend:
         for lt in LOG_TYPES:
             out[lt] = sum(1 for t in self._types if t == lt)
         return out
+
+    def reset(self) -> None:
+        prepared = _prepare(load_logs()) or [(d, classify_log(d)[0]) for d in _DEFAULT_LOGS]
+        self._docs = [t for (t, _) in prepared]
+        self._types = [lt for (_, lt) in prepared]
+        self._matrix = self._vectorizer.fit_transform(self._docs)
  
  
 # PEMILIHAN BACKEND (sekali saat modul dimuat)
@@ -273,16 +285,30 @@ def backend_label() -> str:
  
  
 def insert_log(doc_id: str, text: str, log_type: Optional[str] = None) -> int:
-    """Tambah log runtime ke vector DB. Kembalikan jumlah chunk yang ditambahkan."""
     if not _BACKEND:
         return 0
     if log_type and log_type.lower() not in LOG_TYPES:
-        log_type = None  # tipe tak dikenal -> biarkan auto-klasifikasi
+        log_type = None  
     return _BACKEND.insert(doc_id, text, log_type=log_type)
  
  
 def log_stats() -> Dict[str, int]:
     return _BACKEND.stats() if _BACKEND else {"total": 0}
+
+
+def reset_logs() -> Dict[str, int]:
+    if not _BACKEND:
+        return {"total": 0}
+    _BACKEND.reset()
+    return _BACKEND.stats()
+
+
+def search_log_hits(query: str, n_results: int = 3, log_type: Optional[str] = None):
+    if not _BACKEND:
+        return []
+    if log_type and log_type.lower() not in LOG_TYPES:
+        log_type = None
+    return _BACKEND.search(query, n_results, log_type=log_type)
  
  
 def search_logs(query: str, n_results: int = 3, log_type: Optional[str] = None) -> str:

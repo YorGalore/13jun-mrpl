@@ -32,37 +32,55 @@ PREFIX cvss: <http://w3id.org/sepses/vocab/ref/cvss#>
 """
 
 # Kelas & relasi keamanan yang ingin kita dokumentasikan secara eksplisit.
+# CATATAN: nama kelas diverifikasi dari dump SEPSES nyata (rdf:type) + RML generator
+# (sepses/cyber-kg-converter). CVE=cve:CVE, CWE=cwe:CWE, CAPEC=capec:CAPEC, CPE=cpe:CPE.
 CURATED_CLASSES = [
     ("cve:CVE", "CVE Vulnerability", "http://w3id.org/sepses/vocab/ref/cve#CVE"),
-    ("cwe:Weakness", "CWE Weakness", "http://w3id.org/sepses/vocab/ref/cwe#Weakness"),
-    ("capec:AttackPattern", "CAPEC Attack Pattern", "http://w3id.org/sepses/vocab/ref/capec#AttackPattern"),
+    ("cwe:CWE", "CWE Weakness", "http://w3id.org/sepses/vocab/ref/cwe#CWE"),
+    ("capec:CAPEC", "CAPEC Attack Pattern", "http://w3id.org/sepses/vocab/ref/capec#CAPEC"),
     ("cpe:CPE", "CPE Platform", "http://w3id.org/sepses/vocab/ref/cpe#CPE"),
     ("cvss:CVSS3BaseMetric", "CVSS v3 Base Metric", "http://w3id.org/sepses/vocab/ref/cvss#CVSS3BaseMetric"),
     ("cvss:CVSS2BaseMetric", "CVSS v2 Base Metric", "http://w3id.org/sepses/vocab/ref/cvss#CVSS2BaseMetric"),
 ]
 
-# Object properties (relasi antar-entitas).
+# Object properties (relasi antar-entitas). Diverifikasi dari dump/RML SEPSES.
 CURATED_RELATIONS = [
     ("cve:hasCWE", "CVE -> CWE", "http://w3id.org/sepses/vocab/ref/cve#hasCWE"),
     ("cve:hasCPE", "CVE -> CPE", "http://w3id.org/sepses/vocab/ref/cve#hasCPE"),
+    ("cve:hasVulnerableConfiguration", "CVE -> VulnConfig (CPE)", "http://w3id.org/sepses/vocab/ref/cve#hasVulnerableConfiguration"),
     ("cve:hasCVSS3BaseMetric", "CVE -> CVSS3", "http://w3id.org/sepses/vocab/ref/cve#hasCVSS3BaseMetric"),
     ("cve:hasCVSS2BaseMetric", "CVE -> CVSS2", "http://w3id.org/sepses/vocab/ref/cve#hasCVSS2BaseMetric"),
     ("cwe:hasCAPEC", "CWE -> CAPEC", "http://w3id.org/sepses/vocab/ref/cwe#hasCAPEC"),
-    ("cwe:hasCommonConsequence", "CWE -> Consequence", "http://w3id.org/sepses/vocab/ref/cwe#hasCommonConsequence"),
-    ("cwe:hasPotentialMitigation", "CWE -> Mitigation", "http://w3id.org/sepses/vocab/ref/cwe#hasPotentialMitigation"),
-    ("capec:hasMitigation", "CAPEC -> Mitigation", "http://w3id.org/sepses/vocab/ref/capec#hasMitigation"),
-    ("cvss:baseScore", "CVSS -> baseScore", "http://w3id.org/sepses/vocab/ref/cvss#baseScore"),
+    ("cwe:hasCommonConsequence", "CWE -> Consequence (node)", "http://w3id.org/sepses/vocab/ref/cwe#hasCommonConsequence"),
+    ("cwe:hasPotentialMitigation", "CWE -> Mitigation (node)", "http://w3id.org/sepses/vocab/ref/cwe#hasPotentialMitigation"),
 ]
 
+# Datatype properties (atribut bernilai literal). Diverifikasi dari dump nyata
+# (data/cskg_dumps) + RML generator. Untuk poin yang sempat ambigu (id/description CVE)
+# SENGAJA dimasukkan dua kandidat sekaligus, agar laporan count mengungkap mana yang
+# benar-benar terisi di endpoint live.
 CURATED_DATATYPE_PROPS = [
-    ("cve:id", "CVE id (literal)", "http://w3id.org/sepses/vocab/ref/cve#id"),
-    ("cve:description", "CVE description", "http://w3id.org/sepses/vocab/ref/cve#description"),
-    ("dct:description", "Description (Dublin Core, dipakai CWE & CAPEC)", "http://purl.org/dc/terms/description"),
-    ("dct:issued", "Issued date", "http://purl.org/dc/terms/issued"),
-    ("dct:modified", "Modified date", "http://purl.org/dc/terms/modified"),
+    # --- CVE: identifier & description (dua kandidat agar terbukti dari count) ---
+    ("dct:identifier", "CVE id via Dublin Core (generator JSON SEPSES terkini)", "http://purl.org/dc/terms/identifier"),
+    ("cve:id", "CVE id via vocab cve (generator XML lama; cek apakah masih terisi)", "http://w3id.org/sepses/vocab/ref/cve#id"),
+    ("dct:description", "Deskripsi (Dublin Core) — dipakai CVE, CWE, & CAPEC", "http://purl.org/dc/terms/description"),
+    ("cve:description", "Deskripsi via vocab cve (generator XML lama; cek count)", "http://w3id.org/sepses/vocab/ref/cve#description"),
+    ("dct:issued", "Tanggal terbit CVE (Dublin Core)", "http://purl.org/dc/terms/issued"),
+    ("dct:modified", "Tanggal ubah CVE (Dublin Core)", "http://purl.org/dc/terms/modified"),
+    # --- CWE ---
+    ("cwe:id", "CWE id (literal)", "http://w3id.org/sepses/vocab/ref/cwe#id"),
     ("cwe:name", "CWE name", "http://w3id.org/sepses/vocab/ref/cwe#name"),
+    ("cwe:consequenceImpact", "Dampak konsekuensi CWE (pada node Consequence)", "http://w3id.org/sepses/vocab/ref/cwe#consequenceImpact"),
+    ("cwe:mitigationDescription", "Teks mitigasi CWE (pada node PotentialMitigation)", "http://w3id.org/sepses/vocab/ref/cwe#mitigationDescription"),
+    # --- CAPEC ---
+    ("capec:id", "CAPEC id (literal)", "http://w3id.org/sepses/vocab/ref/capec#id"),
     ("capec:name", "CAPEC name", "http://w3id.org/sepses/vocab/ref/capec#name"),
-    ("cvss:baseScore", "CVSS base score", "http://w3id.org/sepses/vocab/ref/cvss#baseScore"),
+    ("capec:hasMitigation", "Mitigasi CAPEC (LITERAL langsung, bukan node)", "http://w3id.org/sepses/vocab/ref/capec#hasMitigation"),
+    ("capec:likelihoodOfAttack", "Likelihood of attack CAPEC", "http://w3id.org/sepses/vocab/ref/capec#likelihoodOfAttack"),
+    # --- CVSS ---
+    ("cvss:baseScore", "CVSS base score (pada node metric)", "http://w3id.org/sepses/vocab/ref/cvss#baseScore"),
+    ("cvss:confidentialityImpact", "CVSS confidentiality impact", "http://w3id.org/sepses/vocab/ref/cvss#confidentialityImpact"),
+    ("cvss:attackVector", "CVSS attack vector", "http://w3id.org/sepses/vocab/ref/cvss#attackVector"),
 ]
 
 def _run(endpoint: str, query: str, graph: Optional[str]) -> List[Dict[str, str]]:
@@ -138,6 +156,34 @@ def inspect(endpoint: str, graph: Optional[str]) -> Dict:
     }
 
 
+_VERIFIED_NOTES = """\
+## Verified Schema (Issue #1)
+
+Diverifikasi terhadap dump SEPSES nyata (`data/cskg_dumps/*.ttl`) dan generator
+resmi `sepses/cyber-kg-converter` (`rml/cve-json.rml`, `config.properties`).
+Kolom `count` di bawah diisi otomatis saat skrip dijalankan ke data nyata; angka 0
+pada salah satu kandidat (mis. `cve:id` vs `dct:identifier`) menandakan predikat
+itu TIDAK dipakai di endpoint tersebut.
+
+**Pola IRI sumber daya (entry-point yang andal, lepas dari predikat id):**
+- CVE   : `http://w3id.org/sepses/resource/cve/CVE-YYYY-NNNN`
+- CWE   : `http://w3id.org/sepses/resource/cwe/CWE-N`
+- CAPEC : `http://w3id.org/sepses/resource/capec/CAPEC-N`
+
+**Temuan kunci:**
+- Deskripsi CVE/CWE/CAPEC memakai **`dct:description`** (Dublin Core), bukan
+  `cve:description`/`cwe:description`/`capec:description`.
+- Id CVE dari generator JSON terkini memakai **`dct:identifier`** (id juga selalu
+  ada di IRI). Karena itu lookup CVE sebaiknya mengikat lewat IRI, bukan `cve:id`.
+- Mitigasi CAPEC = **`capec:hasMitigation`** berisi **literal langsung**
+  (bukan `capec:mitigation`, bukan node).
+- Mitigasi CWE = node via `cwe:hasPotentialMitigation` -> teks di
+  `cwe:mitigationDescription`.
+- Nama kelas yang benar: `cve:CVE`, `cwe:CWE`, `capec:CAPEC`, `cpe:CPE`
+  (bukan `cwe:Weakness` / `capec:AttackPattern`).
+"""
+
+
 def _md(report: Dict) -> str:
     lines = [
         "# SEPSES CSKG Schema Report",
@@ -148,6 +194,7 @@ def _md(report: Dict) -> str:
         f"- Distinct subjects: `{report['distinct_subjects']}`",
         f"- Distinct objects: `{report['distinct_objects']}`",
         "",
+        _VERIFIED_NOTES,
         "## Top Classes",
         "",
     ]
@@ -201,7 +248,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         graph = args.graph
     elif args.target == "public":
         endpoint = SPARQL_PUBLIC_ENDPOINT
-        graph = args.graph  # publik: default graph (None) kecuali di-override
+        graph = args.graph  
     else:
         endpoint = SPARQL_LOCAL_ENDPOINT
         graph = args.graph or SPARQL_LOCAL_GRAPH

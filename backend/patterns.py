@@ -1,7 +1,3 @@
-"""
-Pola & kata kunci bersama (regex/keyword) — dipakai orchestrator & gateway sparql.
-Tidak menyentuh data apa pun; murni helper teks, jadi aman diimpor siapa saja.
-"""
 from __future__ import annotations
 
 import re
@@ -49,6 +45,15 @@ MITRE_GENERAL_KEYWORDS = [
     "c2", "c&c", "initial access", "execution", "impact", "phishing", "spear phishing",
     "watering hole", "dll hijacking", "process injection", "fileless",
     "living off the land", "lolbins", "link traffic", "network anomal",
+]
+
+VULN_KEYWORDS = [
+    "vulnerability", "vulnerabilities", "cve", "cvss", "severity", "critical",
+    "weakness", "cwe", "capec", "attack pattern", "exploit", "exploitation",
+    "patch", "mitigation", "base score", "score", "remote code execution", "rce",
+    "buffer overflow", "sql injection", "xss", "deserialization",
+    # Istilah Indonesia hanya beberapa sebenarnya 
+    "kerentanan", "celah", "mitigasi", "skor", "parah", "eksploitasi", "tambalan",
 ]
 
 

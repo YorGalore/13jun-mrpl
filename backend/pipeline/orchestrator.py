@@ -12,6 +12,7 @@ from backend.patterns import (
     MALWARE_KEYWORDS,
     MITRE_GENERAL_KEYWORDS,
     THREAT_KEYWORDS,
+    VULN_KEYWORDS,
     extract_actor_name,
     find_cve,
     find_cwe,
@@ -19,13 +20,26 @@ from backend.patterns import (
 from backend.pipeline.prompts import system_prompt_for
 from backend.sources import logs, mitre, sparql
 
-MAX_CONTEXT_CHARS = 6000
+MAX_CONTEXT_CHARS = 8000
 
 
 def _route(mode: str, message: str) -> Dict[str, bool]:
+    """Query router (Issue #4): tentukan sumber mana (KG / log / MITRE) yang dipakai.
+
+    - kg            : aktif untuk threat_intelligence & combined; JUGA untuk log_analysis
+                      bila ada CVE/CWE (agar log dikorelasikan dengan KG).
+    - kg_nl2sparql  : jalankan modul NL2SPARQL (Issue 3) bila ada entitas CVE/CWE
+                      ATAU sinyal kerentanan -> pertanyaan KG umum pun tetap dijawab.
+    - logs          : aktif untuk log_analysis & combined, atau bila ada kata kunci log.
+    - mitre_general : ada kata kunci teknik MITRE.
+    """
     q = message.lower()
+    has_entity = bool(find_cve(message) or find_cwe(message))
+    has_vuln_signal = has_entity or any(k in q for k in VULN_KEYWORDS)
+    kg = mode in ("threat_intelligence", "combined") or has_entity
     return {
-        "kg": mode in ("threat_intelligence", "combined"),
+        "kg": kg,
+        "kg_nl2sparql": kg and has_vuln_signal,
         "logs": mode in ("log_analysis", "combined") or any(k in q for k in LOG_KEYWORDS),
         "mitre_general": any(k in q for k in MITRE_GENERAL_KEYWORDS),
     }
@@ -104,16 +118,16 @@ def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
                     sources.append("MITRE ATT&CK (Techniques)")
             except Exception as e:
                 print(f"[orch] mitre technique gagal: {e}")
- 
- 
-        if cve_id or cwe_id:
+
+        # --- NL2SPARQL terstruktur (Issue #3 module) untuk pertanyaan KG apa pun ---
+        # (bukan hanya saat ada CVE/CWE; pertanyaan umum spt "critical vulnerabilities"
+        #  kini juga dijawab lewat jalur fallback NL2SPARQL.)
+        if route["kg_nl2sparql"]:
             try:
-                sparql_used, method = sparql.generate_sparql(message, model=model)
-                rows = sparql.run_query(sparql_used)
-                if rows:
-                    preview = rows[:10]
-                    lines = [" | ".join(f"{k}: {v}" for k, v in r.items()) for r in preview]
-                    parts.append("=== Hasil SPARQL (KG) ===\n" + "\n".join(lines))
+                kg = sparql.kg_retrieve(message, model=model)
+                sparql_used, method = kg["sparql"], kg["method"]
+                if kg["rows"]:
+                    parts.append(kg["context"])
                     sources.append("SEPSES CSKG (SPARQL)")
             except Exception as e:
                 print(f"[orch] nl2sparql gagal: {e}")

@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from backend.config import DEFAULT_MODEL, FRONTEND_ORIGINS, SUPPORTED_MODEL_NAMES
 from backend.pipeline.orchestrator import answer, compare
 from backend.sources import logs as logs_source
+from backend.sources import sparql as sparql_source
 
 app = FastAPI(title="SEPSES CSKG Chatbot API")
 
@@ -94,6 +95,28 @@ class LogStatsResponse(BaseModel):
     stats: Dict[str, int] = {}
 
 
+class LogResetResponse(BaseModel):
+    ok: bool
+    backend: str
+    stats: Dict[str, int] = {}
+
+
+class KgRequest(BaseModel):
+    question: str
+    model: Optional[str] = None
+
+
+class KgResponse(BaseModel):
+    question: str
+    method: Optional[str] = None          # regex | llm | fallback | fallback_keyword
+    sparql: Optional[str] = None
+    columns: List[str] = []               
+    rows: List[Dict[str, Any]] = []       
+    rowCount: int = 0
+    context: str = ""                     
+    ok: bool = False
+
+
 @app.get("/")
 def root() -> Dict[str, str]:
     return {"service": "SEPSES CSKG Chatbot API", "docs": "/docs"}
@@ -118,7 +141,7 @@ def chat(req: ChatRequest) -> Dict[str, Any]:
             model=req.model or DEFAULT_MODEL,
             history=[h.model_dump() for h in req.history],
         )
-    except Exception as e:  # jaring pengaman: jangan balas 500 mentah ke UI
+    except Exception as e:  # biar nda reply 500 mentah ke UI
         traceback.print_exc()
         return {
             "message": f"⚠️ Gagal memproses permintaan: {e}",
@@ -152,9 +175,7 @@ def compare_models(req: CompareRequest) -> Dict[str, Any]:
 
 @app.post("/api/logs", response_model=LogUploadResponse)
 def upload_logs(req: LogUploadRequest) -> Dict[str, Any]:
-    """Unggah & indeks log keamanan ke vector DB (Issue #2).
-    Body: { content, source?, logType? }. Tiap baris diklasifikasi otomatis
-    (auth/syslog/web_access/ids_alert/firewall) kecuali logType dipaksa."""
+    
     try:
         inserted = logs_source.insert_log(
             req.source or "upload", req.content, log_type=req.logType
@@ -178,3 +199,38 @@ def logs_stats() -> Dict[str, Any]:
         "types": list(logs_source.LOG_TYPES),
         "stats": logs_source.log_stats(),
     }
+
+
+@app.delete("/api/logs", response_model=LogResetResponse)
+def reset_logs() -> Dict[str, Any]:
+    try:
+        stats = logs_source.reset_logs()
+        return {"ok": True, "backend": logs_source.backend_label(), "stats": stats}
+    except Exception:
+        traceback.print_exc()
+        return {"ok": False, "backend": logs_source.backend_label(), "stats": logs_source.log_stats()}
+
+
+@app.post("/api/kg", response_model=KgResponse)
+def kg_query(req: KgRequest) -> Dict[str, Any]:
+    """Modul retrieval KG (Issue #3): NL -> SPARQL -> eksekusi -> konteks terstruktur.
+    Dipakai untuk uji/demonstrasi NL2SPARQL secara terpisah dari /api/chat."""
+
+    try:
+        res = sparql_source.kg_retrieve(req.question, model=req.model or DEFAULT_MODEL)
+        return {
+            "question": res["question"],
+            "method": res["method"],
+            "sparql": res["sparql"],
+            "columns": res["columns"],
+            "rows": res["rows"],
+            "rowCount": res["row_count"],
+            "context": res["context"],
+            "ok": res["ok"],
+        }
+    except Exception as e:
+        traceback.print_exc()
+        return {
+            "question": req.question, "method": None, "sparql": None, "columns": [],
+            "rows": [], "rowCount": 0, "context": f"⚠️ Gagal: {e}", "ok": False,
+        }

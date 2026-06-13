@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from __future__ import annotations
- 
 import re
 import ssl
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
  
 from langchain_core.prompts import PromptTemplate
 from SPARQLWrapper import JSON, POST, SPARQLWrapper
@@ -33,29 +31,50 @@ PREFIX cpe:  <http://w3id.org/sepses/vocab/ref/cpe#>
 PREFIX cvss: <http://w3id.org/sepses/vocab/ref/cvss#>
 """
 
-# Ontologi ringkas untuk membantu LLM membuat SPARQL (jalur nl2sparql).
+# Ontologi untuk membantu LLM membuat SPARQL (jalur nl2sparql).
 ONTOLOGY_CONTEXT = """\
 DATA SOURCE: SEPSES public SPARQL endpoint (CVE/CWE/CAPEC/CPE/CVSS).
-KEY PROPERTIES:
-- cve:id (literal id), dct:description (deskripsi CVE), dct:issued, dct:modified,
-  cve:hasCWE, cve:hasCPE, cve:hasCVSS2BaseMetric, cve:hasCVSS3BaseMetric
+
+ENTITY IRIs (entry-point andal; id juga tersimpan di IRI):
+- CVE   : <http://w3id.org/sepses/resource/cve/CVE-YYYY-NNNN>
+- CWE   : <http://w3id.org/sepses/resource/cwe/CWE-N>
+- CAPEC : <http://w3id.org/sepses/resource/capec/CAPEC-N>
+Untuk mengambil satu CVE, IKAT lewat IRI: BIND(<...resource/cve/CVE-2021-44228> AS ?cve).
+(Hindari `?cve cve:id "..."`: generator JSON terkini memakai dct:identifier, bukan cve:id.)
+
+KEY PROPERTIES (sudah diverifikasi):
+- dct:description  -> deskripsi CVE, CWE, DAN CAPEC (Dublin Core; BUKAN cve:description)
+- dct:issued / dct:modified -> tanggal CVE
+- cve:hasCWE -> node CWE ; cve:hasCPE / cve:hasVulnerableConfiguration -> CPE
+- cve:hasCVSS3BaseMetric / cve:hasCVSS2BaseMetric -> node CVSS
 - cvss:baseScore, cvss:confidentialityImpact, cvss:integrityImpact,
-  cvss:availabilityImpact, cvss:attackVector
-- cwe:id, cwe:name, cwe:status, dct:description (deskripsi CWE),
-  cwe:hasCAPEC, cwe:hasCommonConsequence, cwe:consequenceImpact,
-  cwe:hasPotentialMitigation (mitigasi CWE -> node)
-- capec:id, capec:name, dct:description (deskripsi CAPEC),
-  capec:likelihoodOfAttack, capec:hasMitigation
+  cvss:availabilityImpact, cvss:attackVector  (semua pada node CVSS)
+- cwe:id, cwe:name, cwe:hasCAPEC, cwe:hasCommonConsequence (->cwe:consequenceImpact),
+  cwe:hasPotentialMitigation (->cwe:mitigationDescription)
+- capec:id, capec:name, capec:likelihoodOfAttack,
+  capec:hasMitigation (LITERAL teks mitigasi langsung; BUKAN capec:mitigation)
 
 COMMON SHAPES:
-1. ?cve cve:id "CVE-2021-44228" . OPTIONAL { ?cve dct:description ?d . }
+1. BIND(<http://w3id.org/sepses/resource/cve/CVE-2021-44228> AS ?cve)
+   OPTIONAL { ?cve dct:description ?d . }
 2. ?cve cve:hasCWE ?cwe . OPTIONAL { ?cwe cwe:name ?n . } OPTIONAL { ?cwe dct:description ?cd . }
 3. ?cve cve:hasCVSS3BaseMetric ?m . ?m cvss:baseScore ?s .
 4. ?cwe cwe:hasCAPEC ?capec . OPTIONAL { ?capec capec:name ?name . }
-   OPTIONAL { ?capec dct:description ?capecDesc . }
+   OPTIONAL { ?capec capec:hasMitigation ?mitigation . }
 """
  
 _FORBIDDEN = re.compile(r"\b(INSERT|DELETE|DROP|CLEAR|LOAD|CREATE|COPY|MOVE|ADD)\b", re.IGNORECASE)
+
+CVE_RES = "http://w3id.org/sepses/resource/cve/"
+CWE_RES = "http://w3id.org/sepses/resource/cwe/"
+
+
+def _cve_iri(cve_id: str) -> str:
+    return f"<{CVE_RES}{cve_id}>"
+
+
+def _cwe_iri(cwe_id: str) -> str:
+    return f"<{CWE_RES}{cwe_id}>"
 
 
 # CORE — eksekutor SPARQL: SEPSES publik dulu, Virtuoso lokal sebagai cadangan
@@ -119,7 +138,7 @@ def _local_name(uri: str) -> str:
     return parts[-1] if parts and parts[-1] else uri
 
 
-# VULNERABILITY CONTEXT (eks modul_vulnerability.get_vuln_context)
+# VULNERABILITY CONTEXT 
 def vuln_context(cve_id: str) -> str:
     """Ringkasan kerentanan CVE -> CWE -> CAPEC + CVSS sebagai teks untuk LLM."""
     cve_id = (cve_id or "").strip().upper()
@@ -129,8 +148,8 @@ def vuln_context(cve_id: str) -> str:
     query = f"""{PREFIXES}
 SELECT DISTINCT ?description ?cweName ?capecName ?mitigation ?confImpact ?cvssScore ?consequenceImpact
 WHERE {{
-  ?cve cve:id "{escape_literal(cve_id)}" .
-  OPTIONAL {{ ?cve cve:description ?description . }}
+  BIND({_cve_iri(cve_id)} AS ?cve)
+  OPTIONAL {{ ?cve dct:description ?description . }}
   OPTIONAL {{ ?cve cve:hasCVSS3BaseMetric ?c3 . ?c3 cvss:baseScore ?cvssScore .
              OPTIONAL {{ ?c3 cvss:confidentialityImpact ?confImpact . }} }}
   OPTIONAL {{ ?cve cve:hasCVSS2BaseMetric ?c2 . ?c2 cvss:baseScore ?cvssScore .
@@ -140,7 +159,7 @@ WHERE {{
     OPTIONAL {{ ?cwe cwe:name ?cweName . }}
     OPTIONAL {{ ?cwe cwe:hasCAPEC ?capec .
                OPTIONAL {{ ?capec capec:name ?capecName . }}
-               OPTIONAL {{ ?capec capec:mitigation ?mitigation . }} }}
+               OPTIONAL {{ ?capec capec:hasMitigation ?mitigation . }} }}
     OPTIONAL {{ ?cwe cwe:hasCommonConsequence ?cc . ?cc cwe:consequenceImpact ?consequenceImpact . }}
   }}
 }} LIMIT 200"""
@@ -184,18 +203,18 @@ WHERE {{
     return out
 
 
-# ATTACK CHAIN (eks graph_context.build_attack_chain_context)
+# ATTACK CHAIN 
 def attack_chain_context(cve_id: str) -> str:
     cve_id = (cve_id or "").strip().upper()
     query = f"""{PREFIXES}
 SELECT DISTINCT ?description ?score ?cweName ?capecName ?mitigation WHERE {{
-  ?cve cve:id "{escape_literal(cve_id)}" .
-  OPTIONAL {{ ?cve cve:description ?description . }}
+  BIND({_cve_iri(cve_id)} AS ?cve)
+  OPTIONAL {{ ?cve dct:description ?description . }}
   OPTIONAL {{ ?cve cve:hasCVSS3BaseMetric ?m . ?m cvss:baseScore ?score . }}
   OPTIONAL {{ ?cve cve:hasCWE ?cwe .
              OPTIONAL {{ ?cwe cwe:name ?cweName . }}
              OPTIONAL {{ ?cwe cwe:hasCAPEC ?capec . ?capec capec:name ?capecName .
-                        OPTIONAL {{ ?capec capec:mitigation ?mitigation . }} }} }}
+                        OPTIONAL {{ ?capec capec:hasMitigation ?mitigation . }} }} }}
 }} LIMIT 50"""
     rows = run_query(query)
     if not rows:
@@ -221,7 +240,7 @@ SELECT DISTINCT ?description ?score ?cweName ?capecName ?mitigation WHERE {{
     return "\n".join(lines)
 
 
-# TRIPLES untuk visualisasi graph (eks orchestrator._cve_triples/_cwe_triples)
+# TRIPLES untuk visualisasi graph
 def _mk(subject: str, predicate: str, obj: str, seen: set, out: List[Dict[str, str]]) -> None:
     obj = (obj or "").strip()
     if not obj:
@@ -234,13 +253,10 @@ def _mk(subject: str, predicate: str, obj: str, seen: set, out: List[Dict[str, s
  
  
 def cve_triples(cve_id: str, limit: int = 25) -> List[Dict[str, str]]:
-    """Triples bermakna untuk visualisasi: CVE -> CWE -> CAPEC + CVSS.
-    Dibangun dari rantai serangan (data yang terbukti tersedia), bukan dari
-    kueri mentah `?cve ?p ?o` yang sering kosong/berisik."""
     cve_id = (cve_id or "").strip().upper()
     query = f"""{PREFIXES}
 SELECT DISTINCT ?cwe ?capec ?score WHERE {{
-  ?cve cve:id "{escape_literal(cve_id)}" .
+  BIND({_cve_iri(cve_id)} AS ?cve)
   OPTIONAL {{ ?cve cve:hasCVSS3BaseMetric ?m3 . ?m3 cvss:baseScore ?score . }}
   OPTIONAL {{ ?cve cve:hasCVSS2BaseMetric ?m2 . ?m2 cvss:baseScore ?score . }}
   OPTIONAL {{ ?cve cve:hasCWE ?cwe . OPTIONAL {{ ?cwe cwe:hasCAPEC ?capec . }} }}
@@ -265,7 +281,7 @@ def cwe_triples(cwe_id: str, limit: int = 25) -> List[Dict[str, str]]:
     cwe_id = (cwe_id or "").strip().upper()
     query = f"""{PREFIXES}
 SELECT DISTINCT ?capec WHERE {{
-  ?cwe cwe:id "{escape_literal(cwe_id)}" .
+  BIND({_cwe_iri(cwe_id)} AS ?cwe)
   OPTIONAL {{ ?cwe cwe:hasCAPEC ?capec . }}
 }} LIMIT {int(limit)}"""
     rows = run_query(query)
@@ -278,7 +294,7 @@ SELECT DISTINCT ?capec WHERE {{
     return out
 
 
-# NL -> SPARQL (eks nl2sparql) — regex cepat, lalu LLM, lalu fallback
+# NL -> SPARQL — regex cepat, lalu LLM, lalu fallback
 _PROMPT = PromptTemplate(
     input_variables=["ontology", "question"],
     template=(
@@ -293,8 +309,8 @@ _PROMPT = PromptTemplate(
 def _cve_full(cid: str) -> str:
     return f"""{PREFIXES}
 SELECT DISTINCT ?description ?publishedDate ?cweName ?score WHERE {{
-  ?cve cve:id "{cid}" .
-  OPTIONAL {{ ?cve cve:description ?description . }}
+  BIND({_cve_iri(cid)} AS ?cve)
+  OPTIONAL {{ ?cve dct:description ?description . }}
   OPTIONAL {{ ?cve dct:issued ?publishedDate . }}
   OPTIONAL {{ ?cve cve:hasCWE ?cwe . OPTIONAL {{ ?cwe cwe:name ?cweName . }} }}
   OPTIONAL {{ ?cve cve:hasCVSS3BaseMetric ?m . ?m cvss:baseScore ?score . }}
@@ -304,7 +320,7 @@ SELECT DISTINCT ?description ?publishedDate ?cweName ?score WHERE {{
 def _cve_cvss(cid: str) -> str:
     return f"""{PREFIXES}
 SELECT ?score ?confImpact WHERE {{
-  ?cve cve:id "{cid}" .
+  BIND({_cve_iri(cid)} AS ?cve)
   OPTIONAL {{ ?cve cve:hasCVSS3BaseMetric ?m3 . ?m3 cvss:baseScore ?score ; cvss:confidentialityImpact ?confImpact . }}
   OPTIONAL {{ ?cve cve:hasCVSS2BaseMetric ?m2 . ?m2 cvss:baseScore ?score ; cvss:confidentialityImpact ?confImpact . }}
 }} LIMIT 10"""
@@ -313,23 +329,29 @@ SELECT ?score ?confImpact WHERE {{
 def _cve_capec(cid: str) -> str:
     return f"""{PREFIXES}
 SELECT DISTINCT ?cweName ?capecName ?mitigation WHERE {{
-  ?cve cve:id "{cid}" ; cve:hasCWE ?cwe .
+  BIND({_cve_iri(cid)} AS ?cve)
+  ?cve cve:hasCWE ?cwe .
   OPTIONAL {{ ?cwe cwe:name ?cweName . }}
   OPTIONAL {{ ?cwe cwe:hasCAPEC ?capec . ?capec capec:name ?capecName .
-             OPTIONAL {{ ?capec capec:mitigation ?mitigation . }} }}
+             OPTIONAL {{ ?capec capec:hasMitigation ?mitigation . }} }}
 }} LIMIT 50"""
  
  
 def _cves_by_cwe(cwe_id: str) -> str:
     return f"""{PREFIXES}
-SELECT DISTINCT ?cveId WHERE {{ ?cwe cwe:id "{cwe_id}" . ?cve cve:hasCWE ?cwe ; cve:id ?cveId . }} LIMIT 30"""
- 
- 
+SELECT DISTINCT ?cveId WHERE {{
+  BIND({_cwe_iri(cwe_id)} AS ?cwe)
+  ?cve cve:hasCWE ?cwe .
+  BIND(STRAFTER(STR(?cve), "{CVE_RES}") AS ?cveId)
+}} LIMIT 30"""
+
+
 def _high_severity_fallback() -> str:
     return f"""{PREFIXES}
 SELECT DISTINCT ?cveId ?score WHERE {{
-  ?cve cve:id ?cveId ; cve:hasCVSS3BaseMetric ?m . ?m cvss:baseScore ?score .
+  ?cve a cve:CVE ; cve:hasCVSS3BaseMetric ?m . ?m cvss:baseScore ?score .
   FILTER(?score >= 9.0)
+  BIND(STRAFTER(STR(?cve), "{CVE_RES}") AS ?cveId)
 }} ORDER BY DESC(?score) LIMIT 10"""
  
  
@@ -382,3 +404,44 @@ def generate_sparql(question: str, model: str = DEFAULT_MODEL) -> Tuple[str, str
     if cve:
         return _cve_full(cve.group().upper()), "fallback"
     return _high_severity_fallback(), "fallback_keyword"
+
+
+# RETRIEVAL MODULE (Issue #3) — NL -> SPARQL -> eksekusi -> konteks terstruktur.
+def _rows_to_context(question: str, rows: List[Dict[str, str]], method: str) -> str:
+    """Format baris hasil SPARQL menjadi teks terstruktur siap-prompt LLM.
+    Selaras dengan format yang dipakai orchestrator (=== Hasil SPARQL (KG) ===)."""
+    if not rows:
+        return (
+            f"Tidak ada hasil dari KG untuk: '{question}'. "
+            "(SEPSES publik tidak punya datanya, atau query NL2SPARQL kurang spesifik.)"
+        )
+    header = f"=== Hasil SPARQL (KG) untuk: '{question}' [metode NL2SPARQL: {method}] ==="
+    lines = [header]
+    for i, r in enumerate(rows, 1):
+        pairs = " | ".join(f"{k}: {v}" for k, v in r.items() if v)
+        if pairs:
+            lines.append(f"[{i}] {pairs}")
+    return "\n".join(lines)
+
+
+def kg_retrieve(
+    question: str, model: str = DEFAULT_MODEL, limit_rows: int = 25
+) -> Dict[str, Any]:
+    query, method = generate_sparql(question, model=model)
+    try:
+        rows = run_query(query)
+    except Exception as e:  # run_query sendiri tak pernah raise, tapi jaga-jaga
+        print(f"[sparql] kg_retrieve eksekusi gagal: {e}")
+        rows = []
+    rows = rows[: max(1, int(limit_rows))]
+    columns = sorted({k for r in rows for k in r.keys()})
+    return {
+        "question": question,
+        "method": method,
+        "sparql": query,
+        "columns": columns,
+        "rows": rows,
+        "row_count": len(rows),
+        "context": _rows_to_context(question, rows, method),
+        "ok": bool(rows),
+    }
