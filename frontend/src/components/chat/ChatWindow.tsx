@@ -7,6 +7,7 @@ import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 import { TypingIndicator } from "./TypingIndicator";
 import { ModeSelector, ModelSelector } from "../analysis/ModeSelector";
+import { LogUploadPanel } from "../analysis/LogUploadPanel";
 import { useChat } from "@/hooks/useChat";
 
 import {
@@ -209,6 +210,13 @@ return (
       )
     )}
   </div>
+
+  {/* Upload log (hanya untuk mode yang melibatkan analisis log) */}
+  {(mode === "log_analysis" || mode === "combined") && (
+    <div className="mt-8 w-full max-w-3xl text-left">
+      <LogUploadPanel />
+    </div>
+  )}
 </div>
 
 );

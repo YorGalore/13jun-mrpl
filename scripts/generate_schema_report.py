@@ -8,4 +8,13 @@ if str(ROOT) not in sys.path:
 from backend.llm.schema_inspector import main
 
 if __name__ == "__main__":
+    argv = sys.argv[1:]
     raise SystemExit(main())
+ 
+ 
+ 
+if __name__ == "__main__":
+    argv = sys.argv[1:]
+    if not any(a.startswith("--target") for a in argv) and not any(a.startswith("--endpoint") for a in argv):
+        argv = ["--target", "public", *argv]
+    raise SystemExit(main(argv))

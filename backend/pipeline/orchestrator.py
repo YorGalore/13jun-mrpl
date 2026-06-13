@@ -31,6 +31,26 @@ def _route(mode: str, message: str) -> Dict[str, bool]:
     }
 
 
+# Kata kunci -> tipe log untuk memfilter pencarian vector DB (Issue #2).
+_LOG_TYPE_HINTS = {
+    "auth": ("ssh", "login", "sudo", "password", "auth", "credential", "brute", "authlog"),
+    "ids_alert": ("ids", "ips", "snort", "suricata", "alert", "signature", "intrusion"),
+    "web_access": ("http", "web", "url", "nginx", "apache", "access log", "request", "sql injection", "xss"),
+    "firewall": ("firewall", "ufw", "iptables", "blocked", "drop", "denied"),
+    "syslog": ("syslog", "system log", "kernel", "systemd", "cron", "oom"),
+}
+
+
+def _detect_log_type(q: str) -> Optional[str]:
+    """Pilih satu tipe log paling spesifik dari kueri; None bila tak jelas (cari semua)."""
+    best, best_hits = None, 0
+    for lt, kws in _LOG_TYPE_HINTS.items():
+        hits = sum(1 for k in kws if k in q)
+        if hits > best_hits:
+            best, best_hits = lt, hits
+    return best
+
+
 def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
     route = _route(mode, message)
     parts: List[str] = []
@@ -109,10 +129,14 @@ def _collect_context(message: str, mode: str, model: str) -> Dict[str, Any]:
  
     if route["logs"]:
         try:
-            result = logs.search_logs(message)
+            lt = _detect_log_type(q)
+            result = logs.search_logs(message, log_type=lt)
             if result:
                 parts.append(result)
-            sources.append(f"Log keamanan lokal ({logs.backend_label()})")
+            label = f"Log keamanan lokal ({logs.backend_label()})"
+            if lt:
+                label += f" [tipe={lt}]"
+            sources.append(label)
         except Exception as e:
             print(f"[orch] log search gagal: {e}")
  

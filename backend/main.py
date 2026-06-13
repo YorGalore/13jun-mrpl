@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from backend.config import DEFAULT_MODEL, FRONTEND_ORIGINS, SUPPORTED_MODEL_NAMES
 from backend.pipeline.orchestrator import answer, compare
+from backend.sources import logs as logs_source
 
 app = FastAPI(title="SEPSES CSKG Chatbot API")
 
@@ -74,6 +75,25 @@ class CompareResponse(BaseModel):
     sparql: Optional[str] = None
 
 
+class LogUploadRequest(BaseModel):
+    content: str                       # satu atau banyak baris log (dipisah newline)
+    source: Optional[str] = "upload"   # label sumber untuk metadata
+    logType: Optional[str] = None      # paksa tipe; jika None -> auto-klasifikasi
+
+
+class LogUploadResponse(BaseModel):
+    ok: bool
+    inserted: int                      # jumlah chunk yang ditambahkan
+    backend: str
+    stats: Dict[str, int] = {}
+
+
+class LogStatsResponse(BaseModel):
+    backend: str
+    types: List[str]
+    stats: Dict[str, int] = {}
+
+
 @app.get("/")
 def root() -> Dict[str, str]:
     return {"service": "SEPSES CSKG Chatbot API", "docs": "/docs"}
@@ -129,3 +149,32 @@ def compare_models(req: CompareRequest) -> Dict[str, Any]:
             "method": None,
             "sparql": None,
         }
+
+@app.post("/api/logs", response_model=LogUploadResponse)
+def upload_logs(req: LogUploadRequest) -> Dict[str, Any]:
+    """Unggah & indeks log keamanan ke vector DB (Issue #2).
+    Body: { content, source?, logType? }. Tiap baris diklasifikasi otomatis
+    (auth/syslog/web_access/ids_alert/firewall) kecuali logType dipaksa."""
+    try:
+        inserted = logs_source.insert_log(
+            req.source or "upload", req.content, log_type=req.logType
+        )
+        return {
+            "ok": inserted > 0,
+            "inserted": inserted,
+            "backend": logs_source.backend_label(),
+            "stats": logs_source.log_stats(),
+        }
+    except Exception as e:
+        traceback.print_exc()
+        return {"ok": False, "inserted": 0, "backend": logs_source.backend_label(), "stats": {}}
+
+
+@app.get("/api/logs/stats", response_model=LogStatsResponse)
+def logs_stats() -> Dict[str, Any]:
+    """Ringkasan jumlah log per-tipe di vector DB."""
+    return {
+        "backend": logs_source.backend_label(),
+        "types": list(logs_source.LOG_TYPES),
+        "stats": logs_source.log_stats(),
+    }

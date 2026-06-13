@@ -1,8 +1,6 @@
 from __future__ import annotations
-
 import os
 from pathlib import Path
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -78,7 +76,6 @@ SPARQL_LOCAL_GRAPH = _first_env("SEPSES_LOCAL_GRAPH", "SPARQL_LOCAL_GRAPH") or "
 MITRE_DATASET_CANDIDATES = (
     _clean(os.getenv("MITRE_DATASET_PATH")) and Path(os.getenv("MITRE_DATASET_PATH")),
     ROOT / "data" / "enterprise-attack.json",
-    ROOT / "modul_a3" / "enterprise-attack.json",
 )
 MITRE_DATASET_CANDIDATES = tuple(p for p in MITRE_DATASET_CANDIDATES if p)
 

@@ -1,111 +1,40 @@
 {
-  "endpoint_graph": "http://sepses.local",
-  "graph_count": 1,
-  "graphs": [
-    {
-      "graph": "http://sepses.local"
-    }
+  "_provenance": "Template skema dalam FORMAT BARU (schema_inspector.py terkini). Angka 'count' diisi otomatis saat dijalankan terhadap data nyata. Jalankan: python scripts/generate_schema_report.py --target public  (atau --target local setelah memuat data/cskg_dumps ke Virtuoso). File lama (attack:Technique/vuln:Vulnerability, Triples:0) sudah TIDAK berlaku.",
+  "endpoint": "https://sepses.ifs.tuwien.ac.at/sparql",
+  "graph": "(default graph)",
+  "triple_count": "",
+  "distinct_subjects": "",
+  "distinct_objects": "",
+  "top_classes": [],
+  "top_predicates": [],
+  "curated_classes": [
+    { "class": "cve:CVE", "label": "CVE Vulnerability", "uri": "http://w3id.org/sepses/vocab/ref/cve#CVE", "count": "" },
+    { "class": "cwe:Weakness", "label": "CWE Weakness", "uri": "http://w3id.org/sepses/vocab/ref/cwe#Weakness", "count": "" },
+    { "class": "capec:AttackPattern", "label": "CAPEC Attack Pattern", "uri": "http://w3id.org/sepses/vocab/ref/capec#AttackPattern", "count": "" },
+    { "class": "cpe:CPE", "label": "CPE Platform", "uri": "http://w3id.org/sepses/vocab/ref/cpe#CPE", "count": "" },
+    { "class": "cvss:CVSS3BaseMetric", "label": "CVSS v3 Base Metric", "uri": "http://w3id.org/sepses/vocab/ref/cvss#CVSS3BaseMetric", "count": "" },
+    { "class": "cvss:CVSS2BaseMetric", "label": "CVSS v2 Base Metric", "uri": "http://w3id.org/sepses/vocab/ref/cvss#CVSS2BaseMetric", "count": "" }
   ],
-  "graphs_report": [
-    {
-      "graph_uri": "http://sepses.local",
-      "triple_count": [
-        {
-          "triple_count": "0"
-        }
-      ],
-      "entity_count": [
-        {
-          "subjects": "0",
-          "objects": "0"
-        }
-      ],
-      "top_classes": [],
-      "top_predicates": [],
-      "sample_triples": [],
-      "label_hits": [],
-      "entity_neighborhood": [],
-      "curated_classes": [
-        {
-          "class": "cve:CVE",
-          "label": "CVE",
-          "count": "0",
-          "samples": ""
-        },
-        {
-          "class": "cwe:CWE",
-          "label": "CWE",
-          "count": "0",
-          "samples": ""
-        },
-        {
-          "class": "capec:AttackPattern",
-          "label": "CAPEC Attack Pattern",
-          "count": "0",
-          "samples": ""
-        },
-        {
-          "class": "attack:Technique",
-          "label": "ATT&CK Technique",
-          "count": "0",
-          "samples": ""
-        },
-        {
-          "class": "vuln:Vulnerability",
-          "label": "Vulnerability",
-          "count": "0",
-          "samples": ""
-        },
-        {
-          "class": "cpe:CPE",
-          "label": "CPE",
-          "count": "0",
-          "samples": ""
-        },
-        {
-          "class": "cvss:CVSS",
-          "label": "CVSS",
-          "count": "0",
-          "samples": ""
-        }
-      ],
-      "curated_relations": [
-        {
-          "predicate": "cve:hasCWE",
-          "label": "CVE → CWE",
-          "count": "0"
-        },
-        {
-          "predicate": "cve:hasCAPEC",
-          "label": "CVE → CAPEC",
-          "count": "0"
-        },
-        {
-          "predicate": "cve:hasCPE",
-          "label": "CVE → CPE",
-          "count": "0"
-        },
-        {
-          "predicate": "cve:hasCVSS",
-          "label": "CVE → CVSS",
-          "count": "0"
-        },
-        {
-          "predicate": "vuln:relatedTo",
-          "label": "Vulnerability → Related",
-          "count": "0"
-        },
-        {
-          "predicate": "attack:targets",
-          "label": "ATT&CK → Targets",
-          "count": "0"
-        },
-        {
-          "predicate": "attack:uses",
-          "label": "ATT&CK → Uses",
-          "count": "0"
-        }
-      ]
-    }
-  ]
+  "curated_relations": [
+    { "predicate": "cve:hasCWE", "label": "CVE -> CWE", "uri": "http://w3id.org/sepses/vocab/ref/cve#hasCWE", "count": "" },
+    { "predicate": "cve:hasCPE", "label": "CVE -> CPE", "uri": "http://w3id.org/sepses/vocab/ref/cve#hasCPE", "count": "" },
+    { "predicate": "cve:hasCVSS3BaseMetric", "label": "CVE -> CVSS3", "uri": "http://w3id.org/sepses/vocab/ref/cve#hasCVSS3BaseMetric", "count": "" },
+    { "predicate": "cve:hasCVSS2BaseMetric", "label": "CVE -> CVSS2", "uri": "http://w3id.org/sepses/vocab/ref/cve#hasCVSS2BaseMetric", "count": "" },
+    { "predicate": "cwe:hasCAPEC", "label": "CWE -> CAPEC", "uri": "http://w3id.org/sepses/vocab/ref/cwe#hasCAPEC", "count": "" },
+    { "predicate": "cwe:hasCommonConsequence", "label": "CWE -> Consequence", "uri": "http://w3id.org/sepses/vocab/ref/cwe#hasCommonConsequence", "count": "" },
+    { "predicate": "cwe:hasPotentialMitigation", "label": "CWE -> Mitigation", "uri": "http://w3id.org/sepses/vocab/ref/cwe#hasPotentialMitigation", "count": "" },
+    { "predicate": "capec:hasMitigation", "label": "CAPEC -> Mitigation", "uri": "http://w3id.org/sepses/vocab/ref/capec#hasMitigation", "count": "" },
+    { "predicate": "cvss:baseScore", "label": "CVSS -> baseScore", "uri": "http://w3id.org/sepses/vocab/ref/cvss#baseScore", "count": "" }
+  ],
+  "curated_datatype_props": [
+    { "property": "cve:id", "label": "CVE id (literal)", "uri": "http://w3id.org/sepses/vocab/ref/cve#id", "count": "" },
+    { "property": "cve:description", "label": "CVE description", "uri": "http://w3id.org/sepses/vocab/ref/cve#description", "count": "" },
+    { "property": "dct:description", "label": "Description (Dublin Core, dipakai CWE & CAPEC)", "uri": "http://purl.org/dc/terms/description", "count": "" },
+    { "property": "dct:issued", "label": "Issued date", "uri": "http://purl.org/dc/terms/issued", "count": "" },
+    { "property": "dct:modified", "label": "Modified date", "uri": "http://purl.org/dc/terms/modified", "count": "" },
+    { "property": "cwe:name", "label": "CWE name", "uri": "http://w3id.org/sepses/vocab/ref/cwe#name", "count": "" },
+    { "property": "capec:name", "label": "CAPEC name", "uri": "http://w3id.org/sepses/vocab/ref/capec#name", "count": "" },
+    { "property": "cvss:baseScore", "label": "CVSS base score", "uri": "http://w3id.org/sepses/vocab/ref/cvss#baseScore", "count": "" }
+  ],
+  "sample_triples": []
 }

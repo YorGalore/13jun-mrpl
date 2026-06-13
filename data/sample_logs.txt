@@ -1,15 +1,41 @@
-Failed password for root from 192.168.1.105 port 22 ssh2
-Failed password for invalid user admin from 10.0.0.5 port 3389
-Accepted publickey for user from 192.168.1.2 port 22
-sudo: user NOT in sudoers ; TTY=pts/0 ; USER=root ; COMMAND=/bin/bash
-segfault at 0 ip 00007f error 4 in libc.so
-iptables: DROP IN=eth0 SRC=203.0.113.5 DST=10.0.0.1 PROTO=TCP DPT=22
-PHP Warning: file_get_contents(http://malicious.com/shell.php)
-GET /etc/passwd HTTP/1.1 400 from 192.168.1.200
-Possible SYN flood on port 80
-New connection from 45.33.32.156 on port 4444 (possible reverse shell)
-Authentication failure for user admin from 172.16.0.5
-Port scan detected from 192.168.1.99
-Malware signature detected: Trojan.GenericKD in C:\Windows\Temp\svchost.exe
-Unauthorized access attempt to /admin panel from 10.10.10.5
-SQL injection attempt detected in GET parameter
+# SEPSES CSKG Chatbot - sample security logs
+# Format: satu baris = satu event. Penanda opsional [tipe] di awal baris memaksa klasifikasi.
+# Tipe yang dikenal: auth, syslog, web_access, ids_alert, firewall.
+# Baris diawali '#' diabaikan saat ingest.
+
+# ---------- AUTH / SSH (authlog) ----------
+[auth] Oct 16 13:22:01 web01 sshd[2451]: Failed password for invalid user admin from 203.0.113.9 port 50122 ssh2
+[auth] Oct 16 13:22:03 web01 sshd[2451]: Failed password for root from 203.0.113.9 port 50124 ssh2
+[auth] Oct 16 13:22:05 web01 sshd[2453]: Disconnecting authenticating user root 203.0.113.9 port 50124: Too many authentication failures
+[auth] Oct 16 13:25:11 web01 sshd[2500]: Accepted password for deploy from 10.0.0.34 port 41022 ssh2
+[auth] Oct 16 13:25:11 web01 sshd[2500]: pam_unix(sshd:session): session opened for user deploy by (uid=0)
+[auth] Oct 16 13:30:42 web01 sudo: deploy : TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND=/bin/cat /etc/shadow
+[auth] Oct 16 13:31:02 web01 sudo: pam_unix(sudo:auth): authentication failure; logname=deploy uid=1001 euid=0 tty=/dev/pts/1 ruser=deploy rhost= user=root
+[auth] Oct 16 13:40:18 db01 sshd[8123]: Invalid user oracle from 198.51.100.7 port 60210
+
+# ---------- SYSLOG (system) ----------
+[syslog] Oct 16 13:32:00 web01 systemd[1]: Started Daily apt download activities.
+[syslog] Oct 16 13:33:14 web01 kernel: [12345.6789] Out of memory: Killed process 4521 (java) total-vm:2097152kB
+[syslog] Oct 16 13:34:50 web01 cron[1190]: (root) CMD (/usr/local/bin/backup.sh)
+[syslog] Oct 16 13:35:00 db01 systemd[1]: mysql.service: Main process exited, code=killed, status=9/KILL
+[syslog] Oct 16 13:36:22 web01 dockerd[894]: level=warning msg="container exceeded memory limit"
+
+# ---------- WEB ACCESS (nginx/apache combined) ----------
+[web_access] 203.0.113.9 - - [16/Oct/2025:13:55:36 +0000] "GET /admin.php?id=1%20OR%201=1 HTTP/1.1" 200 4523 "-" "sqlmap/1.7"
+[web_access] 198.51.100.23 - - [16/Oct/2025:13:56:02 +0000] "POST /wp-login.php HTTP/1.1" 401 712 "-" "Mozilla/5.0"
+[web_access] 203.0.113.9 - - [16/Oct/2025:13:56:40 +0000] "GET /../../etc/passwd HTTP/1.1" 400 162 "-" "curl/8.2.1"
+[web_access] 10.0.0.50 - - [16/Oct/2025:13:57:10 +0000] "GET /index.html HTTP/1.1" 200 1043 "-" "Mozilla/5.0"
+[web_access] 198.51.100.77 - - [16/Oct/2025:13:58:31 +0000] "GET /shell.jsp?cmd=whoami HTTP/1.1" 404 209 "-" "Mozilla/5.0"
+
+# ---------- IDS ALERT (Snort/Suricata) ----------
+[ids_alert] [1:2010935:3] ET POLICY Suspicious inbound to mySQL port 3306 [Classification: Potentially Bad Traffic] [Priority: 2] {TCP} 45.33.32.156:51234 -> 10.0.0.5:3306
+[ids_alert] [1:2001219:20] ET SCAN Potential SSH Scan [Classification: Attempted Information Leak] [Priority: 2] {TCP} 203.0.113.9:50122 -> 10.0.0.34:22
+[ids_alert] [1:1000002:1] WEB-ATTACK SQL Injection attempt [Classification: Web Application Attack] [Priority: 1] {TCP} 203.0.113.9:51500 -> 10.0.0.5:80
+[ids_alert] [1:2100498:7] GPL ATTACK_RESPONSE id check returned root [Classification: Potentially Bad Traffic] [Priority: 2] {TCP} 10.0.0.5:80 -> 203.0.113.9:51500
+[ids_alert] [1:2024897:4] ET EXPLOIT Possible Apache Log4j RCE Attempt (CVE-2021-44228) [Classification: Attempted Administrator Privilege Gain] [Priority: 1] {TCP} 45.33.32.156:44321 -> 10.0.0.7:8080
+[ids_alert] [1:2018959:5] ET POLICY Reverse Shell detected outbound [Classification: A Network Trojan was Detected] [Priority: 1] {TCP} 10.0.0.7:4444 -> 45.33.32.156:51234
+
+# ---------- FIREWALL ----------
+[firewall] Oct 16 13:30:00 fw01 kernel: [UFW BLOCK] IN=eth0 OUT= MAC=.. SRC=45.33.32.156 DST=10.0.0.7 PROTO=TCP SPT=44321 DPT=8080
+[firewall] Oct 16 13:30:05 fw01 kernel: [UFW BLOCK] IN=eth0 OUT= SRC=203.0.113.9 DST=10.0.0.34 PROTO=TCP SPT=50122 DPT=22
+[firewall] Oct 16 13:45:12 fw01 iptables: DROP IN=eth0 OUT= SRC=198.51.100.7 DST=10.0.0.5 PROTO=TCP DPT=3306

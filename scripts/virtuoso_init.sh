@@ -4,7 +4,7 @@ HOST="${VIRTUOSO_HOST:-virtuoso}"
 PORT="${VIRTUOSO_PORT:-1111}"
 PW="${DBA_PASSWORD:-dba}"
 GRAPH="${TARGET_GRAPH:-http://sepses.local}"
-DB_DIR="${DB_DIR:-/database}"
+DB_DIR="${DB_DIR:-/dumps}"
 ISQL="/opt/virtuoso-opensource/bin/isql"
 CONN="${HOST}:${PORT}"
 
@@ -12,7 +12,7 @@ isql_exec() { "${ISQL}" "${CONN}" dba "${PW}" "exec=$1"; }
 
 echo "[loader] target=${CONN} graph=${GRAPH} dir=${DB_DIR}"
 
-# 1) Tunggu Virtuoso siap (maks ~120 dtk).
+# 1) Tunggu Virtuoso siap 
 echo -n "[loader] menunggu Virtuoso siap"
 ready=0
 for _ in $(seq 1 60); do
@@ -34,10 +34,10 @@ if [ "${count}" -gt 0 ] 2>/dev/null; then
   exit 0
 fi
 
-# 3) Muat semua *.ttl dari /database (file ada di filesystem service virtuoso).
+# 3) Muat semua *.ttl dari direktori dump (data/cskg_dumps, di-mount sbg ${DB_DIR}).
 echo "[loader] memuat *.ttl dari ${DB_DIR} -> ${GRAPH} ..."
 isql_exec "ld_dir('${DB_DIR}', '*.ttl', '${GRAPH}'); rdf_loader_run(); checkpoint;" || {
-  echo "[loader] perintah load mengembalikan error; cek dump di virtuoso-data/."
+  echo "[loader] perintah load mengembalikan error; cek dump di data/cskg_dumps/."
 }
 
 # 4) Laporkan error loader (kosong = sukses) dan jumlah triple akhir.

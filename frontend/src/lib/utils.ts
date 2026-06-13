@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { AnalysisMode, GraphData, RDFTriple } from "./types";
+import { AnalysisMode, GraphData, RDFTriple, LogType } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -39,13 +39,30 @@ export function getModeColor(mode: AnalysisMode): string {
   return colors[mode];
 }
 
+// Label ramah-pengguna untuk tipe log (Issue #2).
+export function getLogTypeLabel(t: LogType | string): string {
+  const labels: Record<string, string> = {
+    auth: "Auth / SSH",
+    syslog: "Syslog",
+    web_access: "Web access",
+    ids_alert: "IDS alert",
+    firewall: "Firewall",
+    unknown: "Lainnya",
+  };
+  return labels[t] ?? t;
+}
+
 export function getNodeColor(type: string): string {
   const palette: Record<string, string> = {
     Malware: "#ef4444",
     CVE: "#f97316",
     ThreatActor: "#8b5cf6",
     AttackPattern: "#ec4899",
+    CAPEC: "#ec4899",
+    Weakness: "#a855f7",
+    CWE: "#a855f7",
     Vulnerability: "#f59e0b",
+    CVSS: "#22c55e",
     Tool: "#3b82f6",
     Campaign: "#10b981",
     Identity: "#6366f1",
@@ -65,9 +82,14 @@ export function triplesToGraphData(triples: RDFTriple[]): GraphData {
 
   const inferType = (uri: string): string => {
     const lower = uri.toLowerCase();
+    // CVE dulu sebelum 'vuln' generik agar "CVE-..." tidak salah jadi Vulnerability.
+    if (/\bcve-\d/.test(lower) || lower.includes("/cve")) return "CVE";
     if (lower.includes("malware")) return "Malware";
-    if (lower.includes("cve")) return "CVE";
     if (lower.includes("threat") || lower.includes("actor")) return "ThreatActor";
+    if (/\bcapec-\d/.test(lower) || lower.includes("capec")) return "CAPEC";
+    if (/\bcwe-\d/.test(lower) || lower.includes("cwe") || lower.includes("weakness"))
+      return "Weakness";
+    if (lower.includes("cvss") || lower.includes("score")) return "CVSS";
     if (lower.includes("attack")) return "AttackPattern";
     if (lower.includes("vuln")) return "Vulnerability";
     if (lower.includes("tool")) return "Tool";

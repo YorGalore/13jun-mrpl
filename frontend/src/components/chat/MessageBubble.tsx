@@ -1,5 +1,5 @@
 "use client";
-
+import { useState } from "react";
 import { Message } from "@/lib/types";
 
 import {
@@ -16,6 +16,7 @@ import {
   Cpu,
   BookOpen,
   Network,
+  Code2,
 } from "lucide-react";
 
 import ReactMarkdown from "react-markdown";
@@ -29,6 +30,8 @@ export function MessageBubble({
   message,
 }: Props) {
   const { toggleGraphViewer } = useChatStore();
+
+  const [showSparql, setShowSparql] = useState(false);
 
   const isUser = message.role === "user";
 
@@ -151,7 +154,29 @@ export function MessageBubble({
                   triples
                 </button>
               )}
+
+            {!isUser && message.method && (
+              <span className="text-[11px] text-black/60 uppercase tracking-wide">
+                {message.method}
+              </span>
+            )}
+
+            {!isUser && message.sparql && (
+              <button
+                onClick={() => setShowSparql((v) => !v)}
+                className="flex items-center gap-1 bg-[#495A43]/20 hover:bg-[#495A43]/40 text-[#495A43] px-2 py-1 rounded-full text-[11px] transition-all"
+              >
+                <Code2 className="w-3 h-3" />
+                {showSparql ? "Hide SPARQL" : "SPARQL"}
+              </button>
+            )}
           </div>
+
+          {!isUser && message.sparql && showSparql && (
+            <pre className="mt-2 max-w-full overflow-x-auto rounded-2xl bg-[#2F4128] px-4 py-3 text-[11px] leading-5 text-slate-100 whitespace-pre-wrap">
+              {message.sparql}
+            </pre>
+          )}
         </div>
       </div>
     </div>

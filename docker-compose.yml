@@ -9,10 +9,13 @@ services:
       DBA_PASSWORD: dba
       SPARQL_UPDATE: "true"
       DEFAULT_GRAPH: "http://sepses.local"
-      VIRT_Parameters_DirsAllowed: ".,../vad,/usr/share/proj,/database,/opt/virtuoso-opensource/vad"
+      VIRT_Parameters_DirsAllowed: ".,../vad,/usr/share/proj,/database,/dumps,/opt/virtuoso-opensource/vad"
 
     volumes:
-      - ./virtuoso-data:/database
+      # Database Virtuoso (named volume, bukan folder berisi dump).
+      - virtuoso_db:/database
+      # Sumber tunggal dump TTL (Issue #1): hanya data/cskg_dumps, read-only.
+      - ./data/cskg_dumps:/dumps:ro
     healthcheck:
       test: ["CMD-SHELL", "/opt/virtuoso-opensource/bin/isql", "1111", "dba", "dba", "exec=status();"]
       interval: 15s
@@ -30,9 +33,11 @@ services:
       VIRTUOSO_PORT: "1111"
       DBA_PASSWORD: dba
       TARGET_GRAPH: "http://sepses.local"
-      DB_DIR: /database
+      # Issue #1: muat dari /dumps (mount dari data/cskg_dumps), bukan /database.
+      DB_DIR: /dumps
     volumes:
       - ./scripts/virtuoso_init.sh:/init/virtuoso_init.sh:ro
+      - ./data/cskg_dumps:/dumps:ro
     entrypoint: ["/bin/bash", "/init/virtuoso_init.sh"]
     restart: "no"
 
@@ -70,7 +75,6 @@ services:
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:3000}
     volumes:
       - ./data:/app/data:ro
-      - ./modul_a3:/app/modul_a3:ro
       - chroma_db:/app/vector_db            
       - chroma_model_cache:/root/.cache/chroma  
     ports:
@@ -95,5 +99,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  virtuoso_db:
   chroma_db:            
-  chroma_model_cache:   
+  chroma_model_cache:

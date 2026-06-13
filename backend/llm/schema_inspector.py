@@ -1,14 +1,14 @@
 from __future__ import annotations
-
+ 
 import argparse
 import json
 import ssl
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
-
+ 
 from SPARQLWrapper import JSON, POST, SPARQLWrapper
-
+ 
 from backend.config import (
     ROOT,
     SPARQL_LOCAL_ENDPOINT,
@@ -33,21 +33,37 @@ PREFIX cvss: <http://w3id.org/sepses/vocab/ref/cvss#>
 
 # Kelas & relasi keamanan yang ingin kita dokumentasikan secara eksplisit.
 CURATED_CLASSES = [
-    ("cve:CVE", "CVE", "http://w3id.org/sepses/vocab/ref/cve#CVE"),
+    ("cve:CVE", "CVE Vulnerability", "http://w3id.org/sepses/vocab/ref/cve#CVE"),
     ("cwe:Weakness", "CWE Weakness", "http://w3id.org/sepses/vocab/ref/cwe#Weakness"),
     ("capec:AttackPattern", "CAPEC Attack Pattern", "http://w3id.org/sepses/vocab/ref/capec#AttackPattern"),
     ("cpe:CPE", "CPE Platform", "http://w3id.org/sepses/vocab/ref/cpe#CPE"),
-    ("cvss:CVSS3", "CVSS v3 Metric", "http://w3id.org/sepses/vocab/ref/cvss#CVSS3"),
+    ("cvss:CVSS3BaseMetric", "CVSS v3 Base Metric", "http://w3id.org/sepses/vocab/ref/cvss#CVSS3BaseMetric"),
+    ("cvss:CVSS2BaseMetric", "CVSS v2 Base Metric", "http://w3id.org/sepses/vocab/ref/cvss#CVSS2BaseMetric"),
 ]
 
+# Object properties (relasi antar-entitas).
 CURATED_RELATIONS = [
     ("cve:hasCWE", "CVE -> CWE", "http://w3id.org/sepses/vocab/ref/cve#hasCWE"),
     ("cve:hasCPE", "CVE -> CPE", "http://w3id.org/sepses/vocab/ref/cve#hasCPE"),
     ("cve:hasCVSS3BaseMetric", "CVE -> CVSS3", "http://w3id.org/sepses/vocab/ref/cve#hasCVSS3BaseMetric"),
+    ("cve:hasCVSS2BaseMetric", "CVE -> CVSS2", "http://w3id.org/sepses/vocab/ref/cve#hasCVSS2BaseMetric"),
     ("cwe:hasCAPEC", "CWE -> CAPEC", "http://w3id.org/sepses/vocab/ref/cwe#hasCAPEC"),
+    ("cwe:hasCommonConsequence", "CWE -> Consequence", "http://w3id.org/sepses/vocab/ref/cwe#hasCommonConsequence"),
+    ("cwe:hasPotentialMitigation", "CWE -> Mitigation", "http://w3id.org/sepses/vocab/ref/cwe#hasPotentialMitigation"),
+    ("capec:hasMitigation", "CAPEC -> Mitigation", "http://w3id.org/sepses/vocab/ref/capec#hasMitigation"),
     ("cvss:baseScore", "CVSS -> baseScore", "http://w3id.org/sepses/vocab/ref/cvss#baseScore"),
 ]
 
+CURATED_DATATYPE_PROPS = [
+    ("cve:id", "CVE id (literal)", "http://w3id.org/sepses/vocab/ref/cve#id"),
+    ("cve:description", "CVE description", "http://w3id.org/sepses/vocab/ref/cve#description"),
+    ("dct:description", "Description (Dublin Core, dipakai CWE & CAPEC)", "http://purl.org/dc/terms/description"),
+    ("dct:issued", "Issued date", "http://purl.org/dc/terms/issued"),
+    ("dct:modified", "Modified date", "http://purl.org/dc/terms/modified"),
+    ("cwe:name", "CWE name", "http://w3id.org/sepses/vocab/ref/cwe#name"),
+    ("capec:name", "CAPEC name", "http://w3id.org/sepses/vocab/ref/capec#name"),
+    ("cvss:baseScore", "CVSS base score", "http://w3id.org/sepses/vocab/ref/cvss#baseScore"),
+]
 
 def _run(endpoint: str, query: str, graph: Optional[str]) -> List[Dict[str, str]]:
     """Eksekusi satu query; kembalikan [] (tidak raise) bila gagal."""
@@ -65,15 +81,15 @@ def _run(endpoint: str, query: str, graph: Optional[str]) -> List[Dict[str, str]
     except Exception as e:
         print(f"[schema] query gagal: {str(e)[:160]}")
         return []
-
-
+ 
+ 
 def _scalar(rows: List[Dict[str, str]], key: str) -> str:
     return rows[0].get(key, "") if rows else ""
-
-
+ 
+ 
 def inspect(endpoint: str, graph: Optional[str]) -> Dict:
     print(f"[schema] inspeksi endpoint={endpoint} graph={graph or '(default)'}")
-
+ 
     triple_rows = _run(endpoint, f"{PREFIXES}\nSELECT (COUNT(*) AS ?c) WHERE {{ ?s ?p ?o }}", graph)
     ent_rows = _run(
         endpoint,
@@ -91,17 +107,22 @@ def inspect(endpoint: str, graph: Optional[str]) -> Dict:
         graph,
     )
     sample_triples = _run(endpoint, f"{PREFIXES}\nSELECT ?s ?p ?o WHERE {{ ?s ?p ?o }} LIMIT 25", graph)
-
+ 
     curated_classes = []
     for short, label, uri in CURATED_CLASSES:
         rows = _run(endpoint, f"{PREFIXES}\nSELECT (COUNT(?s) AS ?count) WHERE {{ ?s a <{uri}> }}", graph)
         curated_classes.append({"class": short, "label": label, "uri": uri, "count": _scalar(rows, "count") or "0"})
-
+ 
     curated_relations = []
     for short, label, uri in CURATED_RELATIONS:
         rows = _run(endpoint, f"{PREFIXES}\nSELECT (COUNT(*) AS ?count) WHERE {{ ?s <{uri}> ?o }}", graph)
         curated_relations.append({"predicate": short, "label": label, "uri": uri, "count": _scalar(rows, "count") or "0"})
-
+ 
+    curated_datatype_props = []
+    for short, label, uri in CURATED_DATATYPE_PROPS:
+        rows = _run(endpoint, f"{PREFIXES}\nSELECT (COUNT(*) AS ?count) WHERE {{ ?s <{uri}> ?o }}", graph)
+        curated_datatype_props.append({"property": short, "label": label, "uri": uri, "count": _scalar(rows, "count") or "0"})
+ 
     return {
         "endpoint": endpoint,
         "graph": graph or "(default graph)",
@@ -112,6 +133,7 @@ def inspect(endpoint: str, graph: Optional[str]) -> Dict:
         "top_predicates": top_predicates,
         "curated_classes": curated_classes,
         "curated_relations": curated_relations,
+        "curated_datatype_props": curated_datatype_props,
         "sample_triples": sample_triples,
     }
 
@@ -134,20 +156,23 @@ def _md(report: Dict) -> str:
         lines += [f"| {r.get('type', '')} | {r.get('count', '')} |" for r in report["top_classes"]]
     else:
         lines.append("_No data found (endpoint kosong / tidak tersedia)._")
-
+ 
     lines += ["", "## Top Predicates", ""]
     if report["top_predicates"]:
         lines += ["| predicate | count |", "| --- | --- |"]
         lines += [f"| {r.get('p', '')} | {r.get('count', '')} |" for r in report["top_predicates"]]
     else:
         lines.append("_No data found._")
-
+ 
     lines += ["", "## Curated Security Classes", "", "| class | label | count |", "| --- | --- | --- |"]
     lines += [f"| {c['class']} | {c['label']} | {c['count']} |" for c in report["curated_classes"]]
-
+ 
     lines += ["", "## Curated Security Relations", "", "| predicate | label | count |", "| --- | --- | --- |"]
     lines += [f"| {r['predicate']} | {r['label']} | {r['count']} |" for r in report["curated_relations"]]
-
+ 
+    lines += ["", "## Curated Datatype Properties", "", "| property | label | count |", "| --- | --- | --- |"]
+    lines += [f"| {p['property']} | {p['label']} | {p['count']} |" for p in report.get("curated_datatype_props", [])]
+ 
     lines += ["", "## Sample Triples", ""]
     if report["sample_triples"]:
         lines += ["| subject | predicate | object |", "| --- | --- | --- |"]
@@ -158,10 +183,10 @@ def _md(report: Dict) -> str:
             lines.append(f"| {s} | {p} | {o} |")
     else:
         lines.append("_No data found._")
-
+ 
     return "\n".join(lines) + "\n"
-
-
+ 
+ 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Generate SEPSES CSKG schema report.")
     parser.add_argument("--target", choices=["local", "public"], default="local",
@@ -170,7 +195,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--graph", default=None, help="Override named graph (kosongkan untuk default graph).")
     parser.add_argument("--out", default=str(ROOT / "docs"), help="Direktori output dokumen.")
     args = parser.parse_args(argv)
-
+ 
     if args.endpoint:
         endpoint = args.endpoint
         graph = args.graph
@@ -180,24 +205,26 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         endpoint = SPARQL_LOCAL_ENDPOINT
         graph = args.graph or SPARQL_LOCAL_GRAPH
-
+ 
     report = inspect(endpoint, graph)
-
+ 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "knowledge_graph_schema.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     (out_dir / "knowledge_graph_schema.md").write_text(_md(report), encoding="utf-8")
-
+ 
     print(f"[schema] Triples={report['triple_count']} "
-          f"subjects={report['distinct_subjects']} objects={report['distinct_objects']}")
+          f"subjects={report['distinct_subjects']} objects={report['distinct_objects']}"
+          )
+    
     print(f"[schema] Ditulis ke {out_dir}/knowledge_graph_schema.(json|md)")
     if report["triple_count"] in ("", "0"):
         print("[schema] CATATAN: 0 triple. Jika target lokal, pastikan Virtuoso jalan & data "
-              "sudah dimuat (docker compose up / bash scripts/load_virtuoso.sh).")
+              "sudah dimuat (docker compose up; dump TTL ada di data/cskg_dumps/).")
     return 0
-
-
+ 
+ 
 if __name__ == "__main__":
     sys.exit(main())

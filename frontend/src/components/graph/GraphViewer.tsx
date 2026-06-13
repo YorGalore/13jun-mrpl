@@ -128,12 +128,12 @@ export function GraphViewer() {
 
         <div className="flex flex-wrap gap-2">
           {[
-            "Malware",
             "CVE",
+            "Weakness",
+            "CAPEC",
+            "CVSS",
             "ThreatActor",
-            "AttackPattern",
-            "Vulnerability",
-            "Tool",
+            "Malware",
           ].map((type) => (
             <div
               key={type}

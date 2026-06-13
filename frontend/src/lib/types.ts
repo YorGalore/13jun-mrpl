@@ -1,10 +1,22 @@
-export type AnalysisMode = 
-  | "threat_intelligence" 
-  | "log_analysis" 
+export type AnalysisMode =
+  | "threat_intelligence"
+  | "log_analysis"
   | "combined";
 
 export type MessageRole = "user" | "assistant" | "system";
 export type LLMModel = string;
+
+// Selaras dengan backend generate_sparql(): regex | llm | fallback | fallback_keyword.
+export type SparqlMethod = "regex" | "llm" | "fallback" | "fallback_keyword";
+
+// Tipe log untuk Issue #2 (vector DB). Selaras dengan LOG_TYPES di backend/sources/logs.py.
+export type LogType =
+  | "auth"
+  | "syslog"
+  | "web_access"
+  | "ids_alert"
+  | "firewall"
+  | "unknown";
 
 export interface RDFTriple {
   subject: string;
@@ -16,7 +28,7 @@ export interface RDFTriple {
 export interface GraphNode {
   id: string;
   label: string;
-  type: string; // e.g., "Malware", "CVE", "ThreatActor"
+  type: string; // e.g., "Malware", "CVE", "ThreatActor", "Weakness", "AttackPattern"
   color?: string;
 }
 
@@ -41,7 +53,7 @@ export interface Message {
   graphData?: GraphData;       // For graph viewer
   llmUsed?: string;            // Which LLM answered
   sources?: string[];          // Source URLs/references
-  method?: "regex" | "llm" | "fallback";
+  method?: SparqlMethod;
   sparql?: string;
 }
 
@@ -68,6 +80,26 @@ export interface ChatResponse {
   graphData?: GraphData;
   llmUsed?: string;
   sources?: string[];
-  method?: "regex" | "llm" | "fallback";
+  method?: SparqlMethod;
   sparql?: string;
+}
+
+// ---- Issue #2: upload & statistik log ----
+export interface LogUploadRequest {
+  content: string;
+  source?: string;
+  logType?: LogType | null;
+}
+
+export interface LogUploadResponse {
+  ok: boolean;
+  inserted: number;
+  backend: string;
+  stats: Record<string, number>;
+}
+
+export interface LogStatsResponse {
+  backend: string;
+  types: LogType[];
+  stats: Record<string, number>;
 }
