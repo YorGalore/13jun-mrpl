@@ -1,0 +1,227 @@
+# cve_demo.ttl — SUBSET DEMO dari dump SEPSES <http://sepses.ifs.tuwien.ac.at/data/cve>
+# (asal: graph0000001_cve.ttl, dump per 2019-04-03). 
+
+@base <> .
+@prefix rdf:	<http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ns1:	<http://w3id.org/sepses/resource/cve/> .
+@prefix ns2:	<http://w3id.org/sepses/vocab/ref/cve#> .
+@prefix ns3:	<http://w3id.org/sepses/resource/cve/reference/> .
+@prefix ns4:	<http://w3id.org/sepses/resource/cvss/CVSS2BaseMetric/> .
+@prefix ns5:	<http://w3id.org/sepses/vocab/ref/cvss#> .
+@prefix ns6:	<http://w3id.org/sepses/resource/cpe/logicalTest/> .
+@prefix ns7:	<http://w3id.org/sepses/vocab/ref/cpe#> .
+@prefix ns8:	<http://purl.org/dc/terms/> .
+@prefix ns9:	<http://w3id.org/sepses/resource/cpe/> .
+@prefix ns10:	<http://w3id.org/sepses/vocab/ref/cwe#> .
+@prefix ns11:	<http://w3id.org/sepses/resource/cwe/> .
+@prefix ns13:	<http://w3id.org/sepses/resource/cvss/CVSS3BaseMetric/> .
+
+# --- CVE-2018-1000656 (data nyata dari dump SEPSES 2019) ---
+ns1:CVE-2018-1000656	rdf:type	ns2:CVE .
+ns3:CVE-2018-1000656_0123	rdf:type	ns2:Reference .
+ns3:CVE-2018-1000656_201902210001	rdf:type	ns2:Reference .
+ns3:CVE-2018-1000656_2691	rdf:type	ns2:Reference .
+ns4:CVE-2018-1000656	rdf:type	ns5:CVSS2BaseMetric .
+ns1:CVE-2018-1000656	ns8:modified	"2019-02-28T14:30:03.390-05:00" .
+ns1:CVE-2018-1000656	ns8:description	"The Pallets Project flask version Before 0.12.3 contains a CWE-20: Improper Input Validation vulnerability in flask that can result in Large amount of memory usage possibly leading to denial of service. This attack appear to be exploitable via Attacker provides JSON data in incorrect encoding. This vulnerability appears to have been fixed in 0.12.3." .
+ns4:CVE-2018-1000656	ns5:availabilityImpact	"PARTIAL" .
+ns1:CVE-2018-1000656	ns8:issued	"2018-08-20T15:31:45.340-04:00" .
+ns1:CVE-2018-1000656	ns2:hasCVSS2BaseMetric	ns4:CVE-2018-1000656 .
+ns1:CVE-2018-1000656	ns2:hasReference	ns3:CVE-2018-1000656_0123 ,
+		ns3:CVE-2018-1000656_201902210001 ,
+		ns3:CVE-2018-1000656_2691 .
+ns3:CVE-2018-1000656_0123	ns2:referenceSource	"CONFIRM" .
+ns3:CVE-2018-1000656_201902210001	ns2:referenceSource	"CONFIRM" .
+ns3:CVE-2018-1000656_2691	ns2:referenceSource	"CONFIRM" .
+ns3:CVE-2018-1000656_0123	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1000656_201902210001	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1000656_2691	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1000656_0123	ns2:referenceUrl	"https://github.com/pallets/flask/releases/tag/0.12.3" .
+ns3:CVE-2018-1000656_201902210001	ns2:referenceUrl	"https://security.netapp.com/advisory/ntap-20190221-0001/" .
+ns3:CVE-2018-1000656_2691	ns2:referenceUrl	"https://github.com/pallets/flask/pull/2691" .
+ns4:CVE-2018-1000656	ns5:accessComplexity	"LOW" .
+ns4:CVE-2018-1000656	ns5:accessVector	"NETWORK" .
+ns4:CVE-2018-1000656	ns5:baseScore	"5.0" .
+ns4:CVE-2018-1000656	ns5:confidentialityImpact	"NONE" .
+ns4:CVE-2018-1000656	ns5:dateGenerated	"2019-02-28T12:38:46.933-05:00" .
+ns4:CVE-2018-1000656	ns5:integrityImpact	"NONE" .
+ns4:CVE-2018-1000656	ns5:source	"http://nvd.nist.gov" .
+ns1:CVE-2018-1000656	ns2:hasCWE	ns11:CWE-20 .
+ns1:CVE-2018-1000656	ns2:id	"CVE-2018-1000656" .
+
+# --- CVE-2018-1000168 (data nyata dari dump SEPSES 2019) ---
+ns1:CVE-2018-1000168	rdf:type	ns2:CVE .
+ns3:CVE-2018-1000168_103952	rdf:type	ns2:Reference .
+ns3:CVE-2018-1000168_2018	rdf:type	ns2:Reference .
+ns3:CVE-2018-1000168_20190366	rdf:type	ns2:Reference .
+ns3:CVE-2018-1000168_20190367	rdf:type	ns2:Reference .
+ns3:CVE-2018-1000168_22018041221311	rdf:type	ns2:Reference .
+ns4:CVE-2018-1000168	rdf:type	ns5:CVSS2BaseMetric .
+ns1:CVE-2018-1000168	ns8:modified	"2019-03-05T08:58:58.560-05:00" .
+ns1:CVE-2018-1000168	ns8:description	"nghttp2 version >= 1.10.0 and nghttp2 <= v1.31.0 contains an Improper Input Validation CWE-20 vulnerability in ALTSVC frame handling that can result in segmentation fault leading to denial of service. This attack appears to be exploitable via network client. This vulnerability appears to have been fixed in >= 1.31.1." .
+ns4:CVE-2018-1000168	ns5:availabilityImpact	"PARTIAL" .
+ns1:CVE-2018-1000168	ns8:issued	"2018-05-08T11:29:00.207-04:00" .
+ns1:CVE-2018-1000168	ns2:hasCVSS2BaseMetric	ns4:CVE-2018-1000168 .
+ns1:CVE-2018-1000168	ns2:hasReference	ns3:CVE-2018-1000168_103952 ,
+		ns3:CVE-2018-1000168_2018 ,
+		ns3:CVE-2018-1000168_20190366 ,
+		ns3:CVE-2018-1000168_20190367 ,
+		ns3:CVE-2018-1000168_22018041221311 .
+ns3:CVE-2018-1000168_103952	ns2:referenceSource	"BID" .
+ns3:CVE-2018-1000168_2018	ns2:referenceSource	"CONFIRM" .
+ns3:CVE-2018-1000168_20190366	ns2:referenceSource	"REDHAT" .
+ns3:CVE-2018-1000168_20190367	ns2:referenceSource	"REDHAT" .
+ns3:CVE-2018-1000168_22018041221311	ns2:referenceSource	"CONFIRM" .
+ns3:CVE-2018-1000168_103952	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1000168_2018	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1000168_20190366	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1000168_20190367	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1000168_22018041221311	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1000168_103952	ns2:referenceUrl	"http://www.securityfocus.com/bid/103952" .
+ns3:CVE-2018-1000168_2018	ns2:referenceUrl	"https://nodejs.org/en/blog/vulnerability/june-2018-security-releases/" .
+ns3:CVE-2018-1000168_20190366	ns2:referenceUrl	"https://access.redhat.com/errata/RHSA-2019:0366" .
+ns3:CVE-2018-1000168_20190367	ns2:referenceUrl	"https://access.redhat.com/errata/RHSA-2019:0367" .
+ns3:CVE-2018-1000168_22018041221311	ns2:referenceUrl	"https://nghttp2.org/blog/2018/04/12/nghttp2-v1-31-1/" .
+ns4:CVE-2018-1000168	ns5:accessComplexity	"LOW" .
+ns4:CVE-2018-1000168	ns5:accessVector	"NETWORK" .
+ns4:CVE-2018-1000168	ns5:baseScore	"5.0" .
+ns4:CVE-2018-1000168	ns5:confidentialityImpact	"NONE" .
+ns4:CVE-2018-1000168	ns5:dateGenerated	"2019-03-04T09:40:49.933-05:00" .
+ns4:CVE-2018-1000168	ns5:integrityImpact	"NONE" .
+ns4:CVE-2018-1000168	ns5:source	"http://nvd.nist.gov" .
+ns1:CVE-2018-1000168	ns2:hasCWE	ns11:CWE-20 .
+ns1:CVE-2018-1000168	ns2:id	"CVE-2018-1000168" .
+
+# --- CVE-2018-10561 (data nyata dari dump SEPSES 2019) ---
+ns1:CVE-2018-10561	rdf:type	ns2:CVE .
+ns3:CVE-2018-10561_	rdf:type	ns2:Reference .
+ns3:CVE-2018-10561_107053	rdf:type	ns2:Reference .
+ns3:CVE-2018-10561_44576	rdf:type	ns2:Reference .
+ns4:CVE-2018-10561	rdf:type	ns5:CVSS2BaseMetric .
+ns1:CVE-2018-10561	ns8:modified	"2019-03-04T13:39:11.630-05:00" .
+ns1:CVE-2018-10561	ns8:description	"An issue was discovered on Dasan GPON home routers. It is possible to bypass authentication simply by appending \"?images\" to any URL of the device that requires authentication, as demonstrated by the /menu.html?images/ or /GponForm/diag_FORM?images/ URI. One can then manage the device." .
+ns4:CVE-2018-10561	ns5:availabilityImpact	"PARTIAL" .
+ns1:CVE-2018-10561	ns8:issued	"2018-05-03T23:29:00.227-04:00" .
+ns1:CVE-2018-10561	ns2:hasCVSS2BaseMetric	ns4:CVE-2018-10561 .
+ns1:CVE-2018-10561	ns2:hasReference	ns3:CVE-2018-10561_ ,
+		ns3:CVE-2018-10561_107053 ,
+		ns3:CVE-2018-10561_44576 .
+ns3:CVE-2018-10561_	ns2:referenceSource	"MISC" .
+ns3:CVE-2018-10561_107053	ns2:referenceSource	"BID" .
+ns3:CVE-2018-10561_44576	ns2:referenceSource	"EXPLOIT-DB" .
+ns3:CVE-2018-10561_	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-10561_107053	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-10561_44576	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-10561_	ns2:referenceUrl	"https://www.vpnmentor.com/blog/critical-vulnerability-gpon-router/" .
+ns3:CVE-2018-10561_107053	ns2:referenceUrl	"http://www.securityfocus.com/bid/107053" .
+ns3:CVE-2018-10561_44576	ns2:referenceUrl	"https://www.exploit-db.com/exploits/44576/" .
+ns4:CVE-2018-10561	ns5:accessComplexity	"LOW" .
+ns4:CVE-2018-10561	ns5:accessVector	"NETWORK" .
+ns4:CVE-2018-10561	ns5:baseScore	"7.5" .
+ns4:CVE-2018-10561	ns5:confidentialityImpact	"PARTIAL" .
+ns4:CVE-2018-10561	ns5:dateGenerated	"2019-03-04T09:42:37.560-05:00" .
+ns4:CVE-2018-10561	ns5:integrityImpact	"PARTIAL" .
+ns4:CVE-2018-10561	ns5:source	"http://nvd.nist.gov" .
+ns1:CVE-2018-10561	ns2:hasCWE	ns11:CWE-287 .
+ns1:CVE-2018-10561	ns2:id	"CVE-2018-10561" .
+
+# --- CVE-2018-1283 (data nyata dari dump SEPSES 2019) ---
+ns1:CVE-2018-1283	rdf:type	ns2:CVE .
+ns3:CVE-2018-1283_03909	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_103520	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_1040568	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_2018032320181283	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_201806010004	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_20183558	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_20190366	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_20190367	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_24	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_36271	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_36272	rdf:type	ns2:Reference .
+ns3:CVE-2018-1283_4164	rdf:type	ns2:Reference .
+ns4:CVE-2018-1283	rdf:type	ns5:CVSS2BaseMetric .
+ns6:CVE-2018-1283_240	rdf:type	ns7:LogicalTest .
+ns1:CVE-2018-1283	ns8:modified	"2019-02-19T06:29:04.817-05:00" .
+ns1:CVE-2018-1283	ns8:description	"In Apache httpd 2.4.0 to 2.4.29, when mod_session is configured to forward its session data to CGI applications (SessionEnv on, not the default), a remote user may influence their content by using a \"Session\" header. This comes from the \"HTTP_SESSION\" variable name used by mod_session to forward its data to CGIs, since the prefix \"HTTP_\" is also used by the Apache HTTP Server to pass HTTP header fields, per CGI specifications." .
+ns6:CVE-2018-1283_240	ns7:logicalTestNegate	"false" .
+ns4:CVE-2018-1283	ns5:availabilityImpact	"NONE" .
+ns1:CVE-2018-1283	ns8:issued	"2018-03-26T11:29:00.367-04:00" .
+ns1:CVE-2018-1283	ns2:hasCPE	ns9:cpeaapachehttpserver240 .
+ns1:CVE-2018-1283	ns2:hasCVSS2BaseMetric	ns4:CVE-2018-1283 .
+ns1:CVE-2018-1283	ns2:hasReference	ns3:CVE-2018-1283_03909 ,
+		ns3:CVE-2018-1283_103520 ,
+		ns3:CVE-2018-1283_1040568 ,
+		ns3:CVE-2018-1283_2018032320181283 ,
+		ns3:CVE-2018-1283_201806010004 ,
+		ns3:CVE-2018-1283_20183558 ,
+		ns3:CVE-2018-1283_20190366 ,
+		ns3:CVE-2018-1283_20190367 ,
+		ns3:CVE-2018-1283_24 ,
+		ns3:CVE-2018-1283_36271 ,
+		ns3:CVE-2018-1283_36272 ,
+		ns3:CVE-2018-1283_4164 .
+ns1:CVE-2018-1283	ns2:hasVulnerableConfiguration	ns6:CVE-2018-1283_240 .
+ns3:CVE-2018-1283_03909	ns2:referenceSource	"CONFIRM" .
+ns3:CVE-2018-1283_103520	ns2:referenceSource	"BID" .
+ns3:CVE-2018-1283_1040568	ns2:referenceSource	"SECTRACK" .
+ns3:CVE-2018-1283_2018032320181283	ns2:referenceSource	"MLIST" .
+ns3:CVE-2018-1283_201806010004	ns2:referenceSource	"CONFIRM" .
+ns3:CVE-2018-1283_20183558	ns2:referenceSource	"REDHAT" .
+ns3:CVE-2018-1283_20190366	ns2:referenceSource	"REDHAT" .
+ns3:CVE-2018-1283_20190367	ns2:referenceSource	"REDHAT" .
+ns3:CVE-2018-1283_24	ns2:referenceSource	"CONFIRM" .
+ns3:CVE-2018-1283_36271	ns2:referenceSource	"UBUNTU" .
+ns3:CVE-2018-1283_36272	ns2:referenceSource	"UBUNTU" .
+ns3:CVE-2018-1283_4164	ns2:referenceSource	"DEBIAN" .
+ns3:CVE-2018-1283_03909	ns2:referenceType	"UNKNOWN" .
+ns3:CVE-2018-1283_103520	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1283_1040568	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1283_2018032320181283	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1283_201806010004	ns2:referenceType	"UNKNOWN" .
+ns3:CVE-2018-1283_20183558	ns2:referenceType	"UNKNOWN" .
+ns3:CVE-2018-1283_20190366	ns2:referenceType	"UNKNOWN" .
+ns3:CVE-2018-1283_20190367	ns2:referenceType	"UNKNOWN" .
+ns3:CVE-2018-1283_24	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1283_36271	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1283_36272	ns2:referenceType	"UNKNOWN" .
+ns3:CVE-2018-1283_4164	ns2:referenceType	"VENDOR_ADVISORY" .
+ns3:CVE-2018-1283_03909	ns2:referenceUrl	"https://support.hpe.com/hpsc/doc/public/display?docLocale=en_US&docId=emr_na-hpesbux03909en_us" .
+ns3:CVE-2018-1283_103520	ns2:referenceUrl	"http://www.securityfocus.com/bid/103520" .
+ns3:CVE-2018-1283_1040568	ns2:referenceUrl	"http://www.securitytracker.com/id/1040568" .
+ns3:CVE-2018-1283_2018032320181283	ns2:referenceUrl	"http://www.openwall.com/lists/oss-security/2018/03/24/4" .
+ns3:CVE-2018-1283_201806010004	ns2:referenceUrl	"https://security.netapp.com/advisory/ntap-20180601-0004/" .
+ns3:CVE-2018-1283_20183558	ns2:referenceUrl	"https://access.redhat.com/errata/RHSA-2018:3558" .
+ns3:CVE-2018-1283_20190366	ns2:referenceUrl	"https://access.redhat.com/errata/RHSA-2019:0366" .
+ns3:CVE-2018-1283_20190367	ns2:referenceUrl	"https://access.redhat.com/errata/RHSA-2019:0367" .
+ns3:CVE-2018-1283_24	ns2:referenceUrl	"https://httpd.apache.org/security/vulnerabilities_24.html" .
+ns3:CVE-2018-1283_36271	ns2:referenceUrl	"https://usn.ubuntu.com/3627-1/" .
+ns3:CVE-2018-1283_36272	ns2:referenceUrl	"https://usn.ubuntu.com/3627-2/" .
+ns3:CVE-2018-1283_4164	ns2:referenceUrl	"https://www.debian.org/security/2018/dsa-4164" .
+ns6:CVE-2018-1283_240	ns7:hasLogicalTestFactRef	ns9:cpeaapachehttpserver240 .
+ns6:CVE-2018-1283_240	ns7:logicalTestOperator	"OR" .
+ns4:CVE-2018-1283	ns5:accessComplexity	"MEDIUM" .
+ns4:CVE-2018-1283	ns5:accessVector	"NETWORK" .
+ns4:CVE-2018-1283	ns5:baseScore	"3.5" .
+ns4:CVE-2018-1283	ns5:confidentialityImpact	"NONE" .
+ns4:CVE-2018-1283	ns5:dateGenerated	"2018-04-18T14:09:01.937-04:00" .
+ns4:CVE-2018-1283	ns5:integrityImpact	"PARTIAL" .
+ns4:CVE-2018-1283	ns5:source	"http://nvd.nist.gov" .
+ns1:CVE-2018-1283	ns2:hasCWE	ns11:CWE-20 .
+ns1:CVE-2018-1283	ns2:id	"CVE-2018-1283" .
+
+# --- Tambahan DEMO (bukan dari dump 2019): Log4Shell utk use-case evaluasi ---
+ns1:CVE-2021-44228	rdf:type	ns2:CVE .
+ns1:CVE-2021-44228	ns2:id	"CVE-2021-44228" .
+ns1:CVE-2021-44228	ns8:identifier	"CVE-2021-44228" .
+ns1:CVE-2021-44228	ns8:description	"Apache Log4j2 JNDI features used in configuration, log messages, and parameters do not protect against attacker-controlled LDAP and other JNDI related endpoints. An attacker who can control log messages or log message parameters can execute arbitrary code loaded from LDAP servers when message lookup substitution is enabled (Log4Shell)." .
+ns1:CVE-2021-44228	ns8:issued	"2021-12-10T00:00:00.000-05:00" .
+ns1:CVE-2021-44228	ns8:modified	"2023-11-07T00:00:00.000-05:00" .
+ns1:CVE-2021-44228	ns2:hasCVSS3BaseMetric	ns13:CVE-2021-44228 .
+ns13:CVE-2021-44228	rdf:type	ns5:CVSS3BaseMetric .
+ns13:CVE-2021-44228	ns5:baseScore	"10.0" .
+ns13:CVE-2021-44228	ns5:attackVector	"NETWORK" .
+ns13:CVE-2021-44228	ns5:confidentialityImpact	"HIGH" .
+ns13:CVE-2021-44228	ns5:integrityImpact	"HIGH" .
+ns13:CVE-2021-44228	ns5:availabilityImpact	"HIGH" .
+ns1:CVE-2021-44228	ns2:hasCWE	ns11:CWE-502 .
+ns1:CVE-2021-44228	ns2:hasCWE	ns11:CWE-917 .

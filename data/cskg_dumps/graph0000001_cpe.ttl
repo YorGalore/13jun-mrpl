@@ -1,0 +1,65 @@
+# cpe_demo.ttl — SUBSET DEMO dari dump SEPSES <http://sepses.ifs.tuwien.ac.at/data/cpe>
+# (asal: graph0000001_cpe.ttl, dump per 2019-04-03). Dump penuh ~191 MB
+@base <> .
+@prefix rdf:	<http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ns1:	<http://w3id.org/sepses/resource/cpe/> .
+@prefix ns2:	<http://w3id.org/sepses/vocab/ref/cpe#> .
+@prefix ns3:	<http://w3id.org/sepses/resource/cpe/product/> .
+@prefix ns4:	<http://w3id.org/sepses/resource/cpe/vendor/> .
+
+# --- cpeapocoojinja2291 (data nyata dari dump SEPSES 2019) ---
+ns1:cpeapocoojinja2291	rdf:type	ns2:CPE .
+ns1:cpeapocoojinja2291	ns2:cpe23	"cpe:2.3:a:pocoo:jinja2:2.9.1:*:*:*:*:*:*:*" .
+ns1:cpeapocoojinja2291	ns2:cpe_version	"2.3" .
+ns1:cpeapocoojinja2291	ns2:edition	"*" .
+ns1:cpeapocoojinja2291	ns2:hasProduct	ns3:jinja2 .
+ns1:cpeapocoojinja2291	ns2:hasReference	"http://jinja.pocoo.org/" .
+ns1:cpeapocoojinja2291	ns2:hasVendor	ns4:pocoo .
+ns1:cpeapocoojinja2291	ns2:id	"cpe:/a:pocoo:jinja2:2.9.1" .
+ns1:cpeapocoojinja2291	ns2:language	"*" .
+ns1:cpeapocoojinja2291	ns2:other	"*" .
+ns1:cpeapocoojinja2291	ns2:part	"a" .
+ns1:cpeapocoojinja2291	ns2:softwareEdition	"*" .
+ns1:cpeapocoojinja2291	ns2:targetHardware	"*" .
+ns1:cpeapocoojinja2291	ns2:targetSoftware	"*" .
+ns1:cpeapocoojinja2291	ns2:title	"pocoo Jinja2 2.9.1" .
+ns1:cpeapocoojinja2291	ns2:update	"*" .
+ns1:cpeapocoojinja2291	ns2:version	"2.9.1" .
+
+# --- cpeanextcloudnextcloudserver12013 (data nyata dari dump SEPSES 2019) ---
+ns1:cpeanextcloudnextcloudserver12013	rdf:type	ns2:CPE .
+ns1:cpeanextcloudnextcloudserver12013	ns2:cpe23	"cpe:2.3:a:nextcloud:nextcloud_server:12.0.13:*:*:*:*:*:*:*" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:cpe_version	"2.3" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:edition	"*" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:hasProduct	ns3:nextcloud_server .
+ns1:cpeanextcloudnextcloudserver12013	ns2:hasReference	"https://nextcloud.com/" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:hasVendor	ns4:nextcloud .
+ns1:cpeanextcloudnextcloudserver12013	ns2:id	"cpe:/a:nextcloud:nextcloud_server:12.0.13" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:language	"*" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:other	"*" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:part	"a" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:softwareEdition	"*" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:targetHardware	"*" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:targetSoftware	"*" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:title	"Nextcloud Server 12.0.13" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:update	"*" .
+ns1:cpeanextcloudnextcloudserver12013	ns2:version	"12.0.13" .
+
+# --- cpeanpmjsmserver100 (data nyata dari dump SEPSES 2019) ---
+ns1:cpeanpmjsmserver100	rdf:type	ns2:CPE .
+ns1:cpeanpmjsmserver100	ns2:cpe23	"cpe:2.3:a:npmjs:m-server:1.0.0:*:*:*:*:*:*:*" .
+ns1:cpeanpmjsmserver100	ns2:cpe_version	"2.3" .
+ns1:cpeanpmjsmserver100	ns2:edition	"*" .
+ns1:cpeanpmjsmserver100	ns2:hasProduct	ns3:m-server .
+ns1:cpeanpmjsmserver100	ns2:hasReference	"https://www.npmjs.com/package/m-server" .
+ns1:cpeanpmjsmserver100	ns2:hasVendor	ns4:npmjs .
+ns1:cpeanpmjsmserver100	ns2:id	"cpe:/a:npmjs:m-server:1.0.0" .
+ns1:cpeanpmjsmserver100	ns2:language	"*" .
+ns1:cpeanpmjsmserver100	ns2:other	"*" .
+ns1:cpeanpmjsmserver100	ns2:part	"a" .
+ns1:cpeanpmjsmserver100	ns2:softwareEdition	"*" .
+ns1:cpeanpmjsmserver100	ns2:targetHardware	"*" .
+ns1:cpeanpmjsmserver100	ns2:targetSoftware	"*" .
+ns1:cpeanpmjsmserver100	ns2:title	"Npmjs M-server 1.0.0" .
+ns1:cpeanpmjsmserver100	ns2:update	"*" .
+ns1:cpeanpmjsmserver100	ns2:version	"1.0.0" .
